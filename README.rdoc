@@ -1,4 +1,4 @@
-= git-deploy
+= git-deploy (Python version)
 
 = Description
 
@@ -16,11 +16,7 @@ git-deploy supports deployment over SSH and FTP.
 
 = Installation
 
-git-deploy requires the Ruby gems <code>net-ssh</code>, <code>net-sftp</code>, <code>net-scp</code>.
-
-You can install them like so:
-
-  sudo gem install net-ssh net-sftp net-scp
+git-deploy requires Python 3
 
 = Usage
 
@@ -44,14 +40,14 @@ Just enter the settings for the host like so:
     port: 21
     path: /path/to/installation
     overwrite_if_same_revision: true
-		
+
 Note: The port field is optional in both the URI scheme and the broken down options
 
 Once you have done creating the <code>deploy.yml</code>, upload to your server a file called +REVISION+ with the revision string for the current revision residing on the server
 
 After you have commited your code to the repository. You can run
 
-  git deploy
+  git-deploy
 
 
 == Additional Keys
@@ -70,7 +66,3 @@ This file stores the current revision of your application residing on your serve
 
 When you run a <code>git deploy</code>, git-deploy downloads the +REVISION+ file, and checks to see what
 files are different between revisions and either upload the changed files or deletes them from the server.
-
-= TODO
-
-* Create a Ruby gem for the script. Sadly <code>gem-deploy</code> was taken.
