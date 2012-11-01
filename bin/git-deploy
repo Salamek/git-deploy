@@ -2,13 +2,15 @@
 
 #check and load depedencies
 ok = True
-depedencies = ['sys','os','yaml']
+depedencies = ['sys','os','yaml','urllib.parse']
 for dep in depedencies:
   try:
     vars()[dep] = __import__(dep)
   except ImportError:
     ok = False
     print ('Python Module "%s" not found, please install "python-%s"' % (dep,dep))
+
+from urllib.parse import urlparse
 
 
 class deployer:
@@ -34,7 +36,22 @@ class deployer:
       return False
     else:
       f = open(self.config_file)
-      self.config = yaml.load(f)
+      config = yaml.load(f)
+      self.config = {}
+      for i in config:
+        self.config[i] = urlparse(i)
+        #self.config[i] = {'scheme':parsed.scheme,'netloc':parsed.netloc,'path':parsed.path,''}
+
+        if 'scheme' in config[i]:
+          print
+          print (self.config[i].scheme)# = config[i].scheme
+
+
+        #print (i)
+        #print ()
+
+
+      #print (self.config)
       f.close()
       return True
 
