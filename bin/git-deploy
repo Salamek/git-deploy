@@ -2,7 +2,7 @@
 
 #check and load depedencies
 ok = True
-depedencies = ['sys','os','yaml','urllib.parse']
+depedencies = ['sys','os','yaml','ftplib']
 for dep in depedencies:
   try:
     vars()[dep] = __import__(dep)
@@ -26,54 +26,122 @@ class deployer:
     if ok:
       ok = self.read_config()
 
-    #check revision
+    #sync what we get
     if ok:
-      ok = self.check_revision()
+      ok = self.sync()
 
   def read_config(self):
     if os.path.isfile(self.config_file)!=True:
-      print ("Failed to parse configuration file, %s exists ?")
+      print ("Failed to parse configuration file, %s exists ?" % (self.config_file))
       return False
     else:
       f = open(self.config_file)
       config = yaml.load(f)
-      self.config = {}
-      for i in config:
-        self.config[i] = urlparse(i)
-        #self.config[i] = {'scheme':parsed.scheme,'netloc':parsed.netloc,'path':parsed.path,''}
-
-        if 'scheme' in config[i]:
-          print
-          print (self.config[i].scheme)# = config[i].scheme
-
-
-        #print (i)
-        #print ()
-
-
-      #print (self.config)
       f.close()
+
+      self.config = {}
+
+      for i in config:
+        cfg = urlparse(i)
+        #config set from parsed URL and default values
+        self.config[i] = {'scheme':cfg.scheme,'host':cfg.hostname,'port':cfg.port,'path':cfg.path,'user':cfg.username,'password':cfg.password,'time_out':10,'revision_file':'REVISION','branch': 'MASTER'}
+
+        #set additional values
+        for c in config[i]:
+          self.config[i][c] = config[i][c]
       return True
+
+
+  def sync(self):
+    for x in self.config:
+      if self.config[x]['skip'] == False:
+        if self.config[x]['scheme'] == 'sftp':
+          connection = SFTP(self.config[x])
+        elif self.config[x]['scheme'] == 'ftps':
+          connection = FTPS(self.config[x])
+        elif self.config[x]['scheme'] == 'ftp':
+          connection = FTP(self.config[x])
+        else:
+          print ('Unknow scheme, please use sftp/ftps/ftp ')
+
+        print (connection.read_file(self.config[x]['path'],self.config[x]['revision_file']))
+
 
   def check_revision(self):
     print ("Checking revision")
 
 
 #This class handle SFTP (SSH) connections
+#becose PARAMICO  is not suported in py 3 i must implement this by simple cmd commands (Only usable on UNIX)
 class SFTP:
-  def __init__(self):
+  def __init__(self,config):
     print ("SFTP init")
+    import subprocess
+
+    #p = subprocess Popen(["scp", myfile, destination])
+    #sts = os.waitpid(p.pid, 0)
+
+    ret = subprocess.call(["ssh", "user@ssh.sg1game.savana.cz", "cat /www/new/REVISION"]);
+    print (ret)
+
+  def read_file(self,path):
+    print ("SFTP read file")
 
 #This class handle FTP connections
 class FTP:
-  def __init__(self):
-    print ("FTP init")
+  def __init__(self,config):
+    print (config)
+    self.conn = ftplib.FTP()
+    self.conn.connect(config['host'],config['port'],config['time_out'])
 
-#This class handle FTPS (FTP with SSL) connections
+    if config['user']:
+      self.conn.login(config['user'],config['password'])
+
+    print (self.conn.getwelcome())
+
+  def read_file(self,path,filename):
+    self.conn.cwd(path)
+    self.downloaded_data = ''
+    self.conn.retrbinary("RETR " + filename, self.downloaded)
+
+    return self.downloaded_data.strip()
+
+  def downloaded(self,data):
+    self.downloaded_data += data.decode('utf8')
+
+  def upload_file(self,pathf,patht,filename):
+    self.conn.cwd(patht)
+    f = open(pathf + filename, "rb")
+    self.conn.storbinary('STOR ' + filename, f)
+    f.close()
+
+
+#This class handle FTPS connections
 class FTPS:
-  def __init__(self):
-    print ('FTPS init')
+  def __init__(self,config):
+    self.conn = ftplib.FTP_TLS()
+    self.conn.connect(config['host'],config['port'],config['time_out'])
 
+    if config['user']:
+      self.conn.login(config['user'],config['password'])
+
+    print (self.conn.getwelcome())
+
+  def read_file(self,path,filename):
+    self.conn.cwd(path)
+    self.downloaded_data = ''
+    self.conn.retrbinary("RETR " + filename, self.downloaded)
+
+    return self.downloaded_data.strip()
+
+  def downloaded(self,data):
+    self.downloaded_data += data.decode('utf8')
+
+  def upload_file(self,pathf,patht,filename):
+    self.conn.cwd(patht)
+    f = open(pathf + filename, "rb")
+    self.conn.storbinary('STOR ' + filename, f)
+    f.close()
 
 #rock 'n' roll
 if __name__ == "__main__":
