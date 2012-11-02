@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
 #check and load depedencies
+#sys,os thats normal
+#yaml for config parsing
+#ftplib FTP/S support
+#subprocess run CMD
 ok = True
-depedencies = ['sys','os','yaml','ftplib']
+depedencies = ['sys','os','yaml','ftplib','subprocess']
 for dep in depedencies:
   try:
     vars()[dep] = __import__(dep)
@@ -10,11 +14,11 @@ for dep in depedencies:
     ok = False
     print ('Python Module "%s" not found, please install "python-%s"' % (dep,dep))
 
+#TODO implement this into depedencies
 from urllib.parse import urlparse
 
 
 class deployer:
-
   def __init__(self):
     #Set config file name
     self.config_file = 'deploy.yml'
@@ -53,6 +57,10 @@ class deployer:
 
 
   def sync(self):
+    #git test remove me
+    git = GIT()
+    print (git.get_revision())
+    print (git.get_changes())
     for x in self.config:
       if self.config[x]['skip'] == False:
         if self.config[x]['scheme'] == 'sftp':
@@ -76,7 +84,6 @@ class deployer:
 class SFTP:
   def __init__(self,config):
     print ("SFTP init")
-    import subprocess
 
     #p = subprocess Popen(["scp", myfile, destination])
     #sts = os.waitpid(p.pid, 0)
@@ -142,6 +149,19 @@ class FTPS:
     f = open(pathf + filename, "rb")
     self.conn.storbinary('STOR ' + filename, f)
     f.close()
+
+class GIT:
+  def __init__(self):
+    print ("GIT INIT")
+
+  def get_revision(self):
+    return subprocess.check_output(['git','rev-parse', 'HEAD']).decode('utf8').strip();
+
+  def get_changes(self):
+    mixed = subprocess.check_output(['git', 'diff', '--name-status']).decode('utf8').strip();
+    mixed += subprocess.check_output(['git', 'diff', '--cached', '--name-status']).decode('utf8').strip();
+    return mixed
+
 
 #rock 'n' roll
 if __name__ == "__main__":
