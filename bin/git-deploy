@@ -60,7 +60,9 @@ class deployer:
     #git test remove me
     git = GIT()
     print (git.get_revision())
-    print (git.get_changes())
+    print (git.diff_uncommitted())
+    print (git.diff_comitted())
+
     for x in self.config:
       if self.config[x]['skip'] == False:
         if self.config[x]['scheme'] == 'sftp':
@@ -78,9 +80,10 @@ class deployer:
   def check_revision(self):
     print ("Checking revision")
 
-
+#***********************************************************************************************************
 #This class handle SFTP (SSH) connections
 #becose PARAMICO  is not suported in py 3 i must implement this by simple cmd commands (Only usable on UNIX)
+#***********************************************************************************************************
 class SFTP:
   def __init__(self,config):
     print ("SFTP init")
@@ -94,10 +97,11 @@ class SFTP:
   def read_file(self,path):
     print ("SFTP read file")
 
+#*********************************
 #This class handle FTP connections
+#*********************************
 class FTP:
   def __init__(self,config):
-    print (config)
     self.conn = ftplib.FTP()
     self.conn.connect(config['host'],config['port'],config['time_out'])
 
@@ -122,8 +126,9 @@ class FTP:
     self.conn.storbinary('STOR ' + filename, f)
     f.close()
 
-
+#**********************************
 #This class handle FTPS connections
+#**********************************
 class FTPS:
   def __init__(self,config):
     self.conn = ftplib.FTP_TLS()
@@ -150,18 +155,49 @@ class FTPS:
     self.conn.storbinary('STOR ' + filename, f)
     f.close()
 
+#*****************************************
+#Class implementing fetching data from GIT
+#*****************************************
 class GIT:
-  def __init__(self):
-    print ("GIT INIT")
-
+  #Method return current GIT revision
   def get_revision(self):
-    return subprocess.check_output(['git','rev-parse', 'HEAD']).decode('utf8').strip();
+    return subprocess.check_output(['git','rev-parse', 'HEAD']).decode('utf8').strip()
 
-  def get_changes(self):
-    mixed = subprocess.check_output(['git', 'diff', '--name-status']).decode('utf8').strip();
-    mixed += subprocess.check_output(['git', 'diff', '--cached', '--name-status']).decode('utf8').strip();
-    return mixed
+  #Method return uncommited files list
+  def diff_uncommitted(self):
+    mixed = subprocess.check_output(['git', 'diff', '--name-status']).decode('utf8').strip()
+    mixed += subprocess.check_output(['git', 'diff', '--cached', '--name-status']).decode('utf8').strip()
+    return self.parse_files(mixed)
 
+  #Method return commited files list
+  #@param path
+  #@param revision
+  def diff_comitted(self, path = None, revision = None):
+    if revision:
+      files = subprocess.check_output(['git', 'diff', '--name-status', revision, '--', path]).decode('utf8').strip()
+    else:
+      filesall = subprocess.check_output(['git', 'ls-files']).decode('utf8').strip().split("\n")
+      files = ''
+      #make same list as git diff returns, so i can parse it by normal parser
+      for i in filesall:
+        files += 'M	' + i + "\n"
+    return self.parse_files(files)
+
+  #Method parses GIT diff output into filelist
+  #@param files output from GIT diff
+  #@return dict
+  def parse_files(self,files):
+    changes = {'upload':[],'delete':[]}
+    for f in files.split("\n"):
+      if f.strip():
+        fileinfo = f.split('	')
+        action = fileinfo[0].strip()
+        filepath = fileinfo[1].strip()
+        if action in ['A', 'M', 'C']:
+          changes['upload'].append(filepath)
+        elif action == 'D':
+          changes['delete'].append(filepath)
+    return changes
 
 #rock 'n' roll
 if __name__ == "__main__":
