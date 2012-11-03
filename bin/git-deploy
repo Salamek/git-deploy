@@ -80,22 +80,22 @@ class deployer:
   def check_revision(self):
     print ("Checking revision")
 
-#***********************************************************************************************************
+#**********************************************************************************************************************
 #This class handle SFTP (SSH) connections
-#becose PARAMICO  is not suported in py 3 i must implement this by simple cmd commands (Only usable on UNIX)
-#***********************************************************************************************************
+#This truly sux cos PARAMICO is not suported in py 3 i must implement this by simple cmd commands (Only usable on UNIX)
+#**********************************************************************************************************************
 class SFTP:
-  def __init__(self,config):
-    print ("SFTP init")
+  #TODO Implement port set!
+  def read_file(self,path,filename):
+    if 'port' not in config:
+      config['port'] = 22
+    return subprocess.check_output(['ssh', config['user'] + ':' + config['password'] + '@' + config['host'], 'cat ' + path + filename]).decode('utf8').strip()
 
-    #p = subprocess Popen(["scp", myfile, destination])
-    #sts = os.waitpid(p.pid, 0)
+  def upload_file(self,pathf,patht,filename):
+    if 'port' not in config:
+      config['port'] = 22
+    return subprocess.check_output(['scp', '-P ' + config['port'], pathf + filename, config['user'] + ':' + config['password'] + '@' + config['host'] + ':' + patht]).decode('utf8').strip()
 
-    ret = subprocess.call(["ssh", "user@ssh.sg1game.savana.cz", "cat /www/new/REVISION"]);
-    print (ret)
-
-  def read_file(self,path):
-    print ("SFTP read file")
 
 #*********************************
 #This class handle FTP connections
