@@ -59,26 +59,38 @@ class deployer:
   def sync(self):
     #git test remove me
     git = GIT()
-    print (git.get_revision())
-    print (git.diff_uncommitted())
-    print (git.diff_comitted())
+    #print (git.get_revision())
+    #print (git.diff_uncommitted())
+    #print (git.diff_comitted())
+    root = git.get_root_dir()
+    if os.path.exists(root):
+      for x in self.config:
+        if self.config[x]['skip'] == False:
+          if self.config[x]['scheme'] == 'sftp':
+            connection = SFTP(self.config[x])
+          elif self.config[x]['scheme'] == 'ftps':
+            connection = FTPS(self.config[x])
+          elif self.config[x]['scheme'] == 'ftp':
+            connection = FTP(self.config[x])
+          else:
+            print ('Unknow scheme, please use sftp/ftps/ftp ')
 
-    for x in self.config:
-      if self.config[x]['skip'] == False:
-        if self.config[x]['scheme'] == 'sftp':
-          connection = SFTP(self.config[x])
-        elif self.config[x]['scheme'] == 'ftps':
-          connection = FTPS(self.config[x])
-        elif self.config[x]['scheme'] == 'ftp':
-          connection = FTP(self.config[x])
-        else:
-          print ('Unknow scheme, please use sftp/ftps/ftp ')
+          remote_rev = connection.read_file(self.config[x]['path'],self.config[x]['revision_file'])
+          if remote_rev == git.get_revision():
+            print ('revisions match, skiping deploy')
+          else:
+            print ('revisions dont match')
+            remote_rev = '88fb0e89eb7e00955596b3cee914ac86988a9807'
+            files = git.diff_comitted(remote_rev)
+            for u in files['upload']:
+              #print (root + '/' + u)
+              connection.upload_file(root,self.config[x]['path'],u)
 
-        print (connection.read_file(self.config[x]['path'],self.config[x]['revision_file']))
+            for d in files['delete']:
+              print ('D' + d)
+    else:
+      print ('I was unable to get git root dir!')
 
-
-  def check_revision(self):
-    print ("Checking revision")
 
 #**********************************************************************************************************************
 #This class handle SFTP (SSH) connections
@@ -122,9 +134,22 @@ class FTP:
 
   def upload_file(self,pathf,patht,filename):
     self.conn.cwd(patht)
-    f = open(pathf + filename, "rb")
+    f = open(pathf + '/' + filename, "rb")
     self.conn.storbinary('STOR ' + filename, f)
     f.close()
+
+  def directory_exists(dir):
+    filelist = []
+    .retrlines('LIST',filelist.append)
+    for f in filelist:
+        if f.split()[-1] == dir and f.upper().startswith('D'):
+            return True
+    return False
+
+  def chdir(dir):
+    if self.directory_exists(dir) is False: # (or negate, whatever you prefer for readability)
+        self.conn.mkd(dir)
+    self.conn.cwd(dir)
 
 #**********************************
 #This class handle FTPS connections
@@ -172,9 +197,9 @@ class GIT:
   #Method return commited files list
   #@param path
   #@param revision
-  def diff_comitted(self, path = None, revision = None):
+  def diff_comitted(self, revision = ''):
     if revision:
-      files = subprocess.check_output(['git', 'diff', '--name-status', revision, '--', path]).decode('utf8').strip()
+      files = subprocess.check_output(['git', 'diff', '--name-status', revision]).decode('utf8').strip()
     else:
       filesall = subprocess.check_output(['git', 'ls-files']).decode('utf8').strip().split("\n")
       files = ''
@@ -185,7 +210,7 @@ class GIT:
 
   #Method parses GIT diff output into filelist
   #@param files output from GIT diff
-  #@return dict
+  #@return dict upload = files to upload, delete = files to delete
   def parse_files(self,files):
     changes = {'upload':[],'delete':[]}
     for f in files.split("\n"):
@@ -198,6 +223,10 @@ class GIT:
         elif action == 'D':
           changes['delete'].append(filepath)
     return changes
+
+  def get_root_dir(self):
+    return subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode('utf8').strip()
+
 
 #rock 'n' roll
 if __name__ == "__main__":
