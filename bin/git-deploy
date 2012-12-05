@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-#check and load depedencies
-#sys,os thats normal
-#yaml for config parsing
-#ftplib FTP/S support
-#subprocess run CMD
+"""
+check and load depedencies
+sys,os thats normal
+yaml for config parsing
+ftplib FTP/S support
+subprocess run CMDs
+"""
 ok = True
 depedencies = ['sys','os','yaml','ftplib','subprocess']
 for dep in depedencies:
@@ -17,7 +19,9 @@ for dep in depedencies:
 #TODO implement this into depedencies
 from urllib.parse import urlparse
 
-
+#***********************************************
+#This class performing deploying on our target/s
+#***********************************************
 class deployer:
   def __init__(self):
     #Set config file name
