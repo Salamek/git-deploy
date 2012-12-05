@@ -110,6 +110,7 @@ class SFTP:
 
 #*********************************
 #This class handle FTP connections
+#@TODO Check if is posible to use absolute paths on FTP, i dont like solution with cwd and relative path to that dir
 #*********************************
 class FTP:
   def __init__(self,config):
@@ -135,8 +136,8 @@ class FTP:
 
   def upload_file(self,pathf,patht,filename):
     self.conn.cwd(patht)
-
     self.create_path(os.path.dirname(filename))
+    self.conn.cwd(patht)
     f = open(pathf + '/' + filename, "rb")
     self.conn.storbinary('STOR ' + filename, f)
     f.close()
@@ -144,15 +145,19 @@ class FTP:
   def create_path(self,path):
     splited = path.strip('/').split('/')
 
-    paths = []
     prev = ''
     for i in splited:
-      prev += '/' + i
-      paths.append(prev)
 
-    print (paths)
+      if prev:
+        prev += '/' + i
+      else:
+        prev = i
 
-  def directory_exists(dir):
+      if self.directory_exists(prev) is False:
+        self.conn.mkd(prev)
+      self.conn.cwd(prev)
+
+  def directory_exists(self,dir):
     filelist = []
     self.conn.retrlines('LIST',filelist.append)
     for f in filelist:
@@ -160,7 +165,7 @@ class FTP:
             return True
     return False
 
-  def chdir(dir):
+  def chdir(self,dir):
     if self.directory_exists(dir) is False:
         self.conn.mkd(dir)
     self.conn.cwd(dir)
@@ -215,12 +220,11 @@ class GIT:
     if revision:
       files = subprocess.check_output(['git', 'diff', '--name-status', revision]).decode('utf8').strip()
     else:
-      filesall = subprocess.check_output(['git', 'ls-files','--full-name']).decode('utf8').strip().split("\n")
+      filesall = subprocess.check_output(['git', 'ls-files',self.get_root_dir(),'--full-name']).decode('utf8').strip().split("\n")
       files = ''
       #make same list as git diff returns, so i can parse it by normal parser
       for i in filesall:
         files += 'M	' + i + "\n"
-
     return self.parse_files(files)
 
   #Method parses GIT diff output into filelist
@@ -228,15 +232,19 @@ class GIT:
   #@return dict upload = files to upload, delete = files to delete
   def parse_files(self,files):
     changes = {'upload':[],'delete':[]}
+    #ignore these files
+    ignore = ['.gitignore']
     for f in files.split("\n"):
       if f.strip():
         fileinfo = f.split('	')
         action = fileinfo[0].strip()
         filepath = fileinfo[1].strip()
-        if action in ['A', 'M', 'C']:
-          changes['upload'].append(filepath)
-        elif action == 'D':
-          changes['delete'].append(filepath)
+
+        if os.path.basename(filepath) not in ignore:
+          if action in ['A', 'M', 'C']:
+            changes['upload'].append(filepath)
+          elif action == 'D':
+            changes['delete'].append(filepath)
     return changes
 
   def get_root_dir(self):
