@@ -84,6 +84,7 @@ class deployer:
             for u in files['upload']:
               print ("Deploying " + root + '/' + u)
               connection.upload_file(root,self.config[x]['path'],u)
+              print ("Deployed!")
 
             for d in files['delete']:
               print ('D' + d)
@@ -136,34 +137,39 @@ class FTP:
 
   def upload_file(self,pathf,patht,filename):
     self.conn.cwd(patht)
-    self.create_path(os.path.dirname(filename))
+    self.create_path(os.path.dirname(patht +filename))
     self.conn.cwd(patht)
     f = open(pathf + '/' + filename, "rb")
     self.conn.storbinary('STOR ' + filename, f)
     f.close()
 
+  #Method creates path on FTP, path must be absolute to HTP root!
+  #@param path path to create eg.: /libs/test.php where first / is root of FTP
   def create_path(self,path):
     splited = path.strip('/').split('/')
-
     prev = ''
     for i in splited:
-
       if prev:
         prev += '/' + i
       else:
         prev = i
 
-      if self.directory_exists(prev) is False:
-        self.conn.mkd(prev)
-      self.conn.cwd(prev)
+      if prev:
+        if self.directory_exists(prev) is False:
+          self.conn.mkd(prev)
 
   def directory_exists(self,dir):
-    filelist = []
-    self.conn.retrlines('LIST',filelist.append)
-    for f in filelist:
-        if f.split()[-1] == dir and f.upper().startswith('D'):
-            return True
-    return False
+    exists = True
+    try:
+      self.conn.cwd(dir)
+    except:
+      exists = False
+
+    #if exists that means we successfully cwd dir, so we need reset position to root
+    if exists:
+      self.conn.cwd('/')
+
+    return exists
 
   def chdir(self,dir):
     if self.directory_exists(dir) is False:
@@ -247,6 +253,8 @@ class GIT:
             changes['delete'].append(filepath)
     return changes
 
+  #Method returns GIT root directory
+  #@return str path
   def get_root_dir(self):
     return subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode('utf8').strip()
 
