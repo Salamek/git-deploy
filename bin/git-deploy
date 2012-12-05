@@ -171,11 +171,6 @@ class FTP:
 
     return exists
 
-  def chdir(self,dir):
-    if self.directory_exists(dir) is False:
-        self.conn.mkd(dir)
-    self.conn.cwd(dir)
-
 #**********************************
 #This class handle FTPS connections
 #**********************************
