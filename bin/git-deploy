@@ -114,15 +114,25 @@ class SFTP:
 #@TODO Check if is posible to use absolute paths on FTP, i dont like solution with cwd and relative path to that dir
 #*********************************
 class FTP:
+
+  """
+  FTP/S class init
+  @param config, config of deployer
+  """
   def __init__(self,config):
     self.conn = ftplib.FTP()
     self.conn.connect(config['host'],config['port'],config['time_out'])
 
     if config['user']:
       self.conn.login(config['user'],config['password'])
-
     print (self.conn.getwelcome())
 
+  """
+  Method reads file on FTP
+  @param path path to file
+  @param filename name of file to read
+  @todo rewrite to use absolute paths
+  """
   def read_file(self,path,filename):
     self.conn.cwd(path)
     self.downloaded_data = ''
@@ -132,9 +142,19 @@ class FTP:
     except Exception as inst:
       return ''
 
+  """
+  Method is used as download handler for read_file method
+  @param data data recived
+  """
   def downloaded(self,data):
     self.downloaded_data += data.decode('utf8')
 
+  """
+  Method uploads file on FTP
+  @param pathf path to file on local filesystem
+  @param patht path to file on remove filesystem
+  @param filename name of file relative to GIT root dir
+  """
   def upload_file(self,pathf,patht,filename):
     self.conn.cwd(patht)
     self.create_path(os.path.dirname(patht +filename))
@@ -143,8 +163,10 @@ class FTP:
     self.conn.storbinary('STOR ' + filename, f)
     f.close()
 
-  #Method creates path on FTP, path must be absolute to HTP root!
-  #@param path path to create eg.: /libs/test.php where first / is root of FTP
+  """
+  Method creates path on FTP, path must be absolute to HTP root!
+  @param path path to create eg.: /libs/test.php where first / is root of FTP
+  """
   def create_path(self,path):
     splited = path.strip('/').split('/')
     prev = ''
@@ -158,6 +180,10 @@ class FTP:
         if self.directory_exists(prev) is False:
           self.conn.mkd(prev)
 
+  """
+  Method checks if directory exists
+  @param dir dirpath to check
+  """
   def directory_exists(self,dir):
     exists = True
     try:
