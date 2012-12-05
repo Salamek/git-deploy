@@ -80,7 +80,6 @@ class deployer:
             print ('revisions match, skiping deploy')
           else:
             print ('revisions dont match')
-            remote_rev = '88fb0e89eb7e00955596b3cee914ac86988a9807'
             files = git.diff_comitted(remote_rev)
             for u in files['upload']:
               #print (root + '/' + u)
@@ -140,7 +139,7 @@ class FTP:
 
   def directory_exists(dir):
     filelist = []
-    .retrlines('LIST',filelist.append)
+    self.conn.retrlines('LIST',filelist.append)
     for f in filelist:
         if f.split()[-1] == dir and f.upper().startswith('D'):
             return True
@@ -230,6 +229,8 @@ class GIT:
 
 #rock 'n' roll
 if __name__ == "__main__":
+  if ok:
+      deployer = deployer()
   try:
     if ok:
       deployer = deployer()
