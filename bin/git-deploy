@@ -82,7 +82,7 @@ class deployer:
             print ('revisions dont match')
             files = git.diff_comitted(remote_rev)
             for u in files['upload']:
-              #print (root + '/' + u)
+              print (root + '/' + u)
               connection.upload_file(root,self.config[x]['path'],u)
 
             for d in files['delete']:
@@ -202,11 +202,12 @@ class GIT:
     if revision:
       files = subprocess.check_output(['git', 'diff', '--name-status', revision]).decode('utf8').strip()
     else:
-      filesall = subprocess.check_output(['git', 'ls-files']).decode('utf8').strip().split("\n")
+      filesall = subprocess.check_output(['git', 'ls-files','--full-name']).decode('utf8').strip().split("\n")
       files = ''
       #make same list as git diff returns, so i can parse it by normal parser
       for i in filesall:
         files += 'M	' + i + "\n"
+
     return self.parse_files(files)
 
   #Method parses GIT diff output into filelist
