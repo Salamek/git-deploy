@@ -57,20 +57,14 @@ class deployer:
 
 
   def sync(self):
-    #git test remove me
     git = GIT()
-    #print (git.get_revision())
-    #print (git.diff_uncommitted())
-    #print (git.diff_comitted())
     root = git.get_root_dir()
     if os.path.exists(root):
       for x in self.config:
         if self.config[x]['skip'] == False:
           if self.config[x]['scheme'] == 'sftp':
             connection = SFTP(self.config[x])
-          elif self.config[x]['scheme'] == 'ftps':
-            connection = FTPS(self.config[x])
-          elif self.config[x]['scheme'] == 'ftp':
+          elif self.config[x]['scheme'] == 'ftps' or self.config[x]['scheme'] == 'ftp':
             connection = FTP(self.config[x])
           else:
             print ('Unknow scheme, please use sftp/ftps/ftp ')
@@ -120,7 +114,12 @@ class FTP:
   @param config, config of deployer
   """
   def __init__(self,config):
-    self.conn = ftplib.FTP()
+
+    if config['scheme'] == 'ftp':
+      self.conn = ftplib.FTP()
+    elif config['scheme'] == 'ftps':
+      self.conn = ftplib.FTP_TLS()
+
     self.conn.connect(config['host'],config['port'],config['time_out'])
 
     if config['user']:
@@ -196,35 +195,6 @@ class FTP:
       self.conn.cwd('/')
 
     return exists
-
-#**********************************
-#This class handle FTPS connections
-#**********************************
-class FTPS:
-  def __init__(self,config):
-    self.conn = ftplib.FTP_TLS()
-    self.conn.connect(config['host'],config['port'],config['time_out'])
-
-    if config['user']:
-      self.conn.login(config['user'],config['password'])
-
-    print (self.conn.getwelcome())
-
-  def read_file(self,path,filename):
-    self.conn.cwd(path)
-    self.downloaded_data = ''
-    self.conn.retrbinary("RETR " + filename, self.downloaded)
-
-    return self.downloaded_data.strip()
-
-  def downloaded(self,data):
-    self.downloaded_data += data.decode('utf8')
-
-  def upload_file(self,pathf,patht,filename):
-    self.conn.cwd(patht)
-    f = open(pathf + filename, "rb")
-    self.conn.storbinary('STOR ' + filename, f)
-    f.close()
 
 #*****************************************
 #Class implementing fetching data from GIT
