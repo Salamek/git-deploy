@@ -200,19 +200,27 @@ class FTP:
 #Class implementing fetching data from GIT
 #*****************************************
 class GIT:
-  #Method return current GIT revision
+  """
+  Method return current GIT revision
+  @return git revision
+  """
   def get_revision(self):
     return subprocess.check_output(['git','rev-parse', 'HEAD']).decode('utf8').strip()
 
-  #Method return uncommited files list
+  """
+  Method return uncommited files list
+  @return uncommitted files list
+  """
   def diff_uncommitted(self):
     mixed = subprocess.check_output(['git', 'diff', '--name-status']).decode('utf8').strip()
     mixed += subprocess.check_output(['git', 'diff', '--cached', '--name-status']).decode('utf8').strip()
     return self.parse_files(mixed)
 
-  #Method return commited files list
-  #@param path
-  #@param revision
+  """
+  Method return commited files list
+  @param path
+  @param revision
+  """
   def diff_comitted(self, revision = ''):
     if revision:
       files = subprocess.check_output(['git', 'diff', '--name-status', revision]).decode('utf8').strip()
@@ -224,9 +232,11 @@ class GIT:
         files += 'M	' + i + "\n"
     return self.parse_files(files)
 
-  #Method parses GIT diff output into filelist
-  #@param files output from GIT diff
-  #@return dict upload = files to upload, delete = files to delete
+  """
+  Method parses GIT diff output into filelist
+  @param files output from GIT diff
+  @return dict upload = files to upload, delete = files to delete
+  """
   def parse_files(self,files):
     changes = {'upload':[],'delete':[]}
     #ignore these files
@@ -244,8 +254,10 @@ class GIT:
             changes['delete'].append(filepath)
     return changes
 
-  #Method returns GIT root directory
-  #@return str path
+  """
+  Method returns GIT root directory
+  @return str path
+  """
   def get_root_dir(self):
     return subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode('utf8').strip()
 
