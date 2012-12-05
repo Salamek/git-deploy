@@ -124,9 +124,11 @@ class FTP:
   def read_file(self,path,filename):
     self.conn.cwd(path)
     self.downloaded_data = ''
-    self.conn.retrbinary("RETR " + filename, self.downloaded)
-
-    return self.downloaded_data.strip()
+    try:
+      self.conn.retrbinary("RETR " + filename, self.downloaded)
+      return self.downloaded_data.strip()
+    except Exception as inst:
+      return ''
 
   def downloaded(self,data):
     self.downloaded_data += data.decode('utf8')
@@ -231,10 +233,10 @@ class GIT:
 if __name__ == "__main__":
   if ok:
       deployer = deployer()
-  try:
-    if ok:
-      deployer = deployer()
-    else:
-      print ('Exiting...')
-  except Exception as inst:
-    print (str(inst))
+  #try:
+  #  if ok:
+  #    deployer = deployer()
+  #  else:
+  #    print ('Exiting...')
+  #except Exception as inst:
+  #  print (str(inst))
