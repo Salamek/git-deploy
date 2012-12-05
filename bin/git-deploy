@@ -8,7 +8,7 @@ ftplib FTP/S support
 subprocess run CMDs
 """
 ok = True
-depedencies = ['sys','os','yaml','ftplib','subprocess']
+depedencies = ['sys','os','yaml','ftplib','subprocess','tempfile']
 for dep in depedencies:
   try:
     vars()[dep] = __import__(dep)
@@ -59,7 +59,7 @@ class deployer:
           self.config[i][c] = config[i][c]
       return True
 
-
+  #@TODO pass config only in constructor, so remove it from read_file adn upload_file etc
   def sync(self):
     git = GIT()
     root = git.get_root_dir()
@@ -74,18 +74,25 @@ class deployer:
             print ('Unknow scheme, please use sftp/ftps/ftp ')
 
           remote_rev = connection.read_file(self.config[x]['path'],self.config[x]['revision_file'])
-          if remote_rev == git.get_revision():
+          local_rev = git.get_revision()
+          if remote_rev == local_rev:
             print ('revisions match, skiping deploy')
           else:
             print ('revisions dont match')
             files = git.diff_comitted(remote_rev)
-            for u in files['upload']:
-              print ("Deploying " + root + '/' + u)
-              connection.upload_file(root,self.config[x]['path'],u)
-              print ("Deployed!")
 
+            #upload new/edited files to FTP
+            for u in files['upload']:
+              print ("Deploying " + root + '/' + u + ' --> ' + self.config[x]['path'] + u)
+              connection.upload_file(root,self.config[x]['path'],u)
+
+            #delete deleted files on FTP
             for d in files['delete']:
-              print ('D' + d)
+              print ("Deleting " + self.config[x]['path'] + d)
+
+
+          #deploy revision file
+          connection.upload_string(self.config[x]['path'],self.config[x]['revision_file'],local_rev)
     else:
       print ('I was unable to get git root dir!')
 
@@ -118,17 +125,18 @@ class FTP:
   @param config, config of deployer
   """
   def __init__(self,config):
-
-    if config['scheme'] == 'ftp':
+    self.config = config;
+    if self.config['scheme'] == 'ftp':
       self.conn = ftplib.FTP()
-    elif config['scheme'] == 'ftps':
+    elif self.config['scheme'] == 'ftps':
       self.conn = ftplib.FTP_TLS()
 
-    self.conn.connect(config['host'],config['port'],config['time_out'])
+    self.conn.connect(self.config['host'],self.config['port'],self.config['time_out'])
 
-    if config['user']:
-      self.conn.login(config['user'],config['password'])
+    if self.config['user']:
+      self.conn.login(self.config['user'],self.config['password'])
     print (self.conn.getwelcome())
+    print (self.conn.pwd())
 
   """
   Method reads file on FTP
@@ -155,16 +163,30 @@ class FTP:
   """
   Method uploads file on FTP
   @param pathf path to file on local filesystem
-  @param patht path to file on remove filesystem
+  @param patht path to file on remote filesystem
   @param filename name of file relative to GIT root dir
+  @todo only absolute path for file as param?
   """
   def upload_file(self,pathf,patht,filename):
-    self.conn.cwd(patht)
-    self.create_path(os.path.dirname(patht +filename))
-    self.conn.cwd(patht)
+    self.create_path(os.path.dirname(patht + filename))
     f = open(pathf + '/' + filename, "rb")
     self.conn.storbinary('STOR ' + filename, f)
     f.close()
+
+  """
+  Method uploads string on FTP
+  @param patht path to file on remote filesystem
+  @param filename name of file relative to GIT root dir
+  @todo only absolute path for file as param?
+  """
+  def upload_string(self,patht,filename,data):
+    self.create_path(os.path.dirname(patht + filename))
+    #f = open('/tmp' + filename, "wb")
+    f = tempfile.TemporaryFile(mode='w')
+    f.write(data)
+    self.conn.storlines('STOR ' + filename, f)
+    f.close()
+
 
   """
   Method creates path on FTP, path must be absolute to HTP root!
@@ -196,7 +218,7 @@ class FTP:
 
     #if exists that means we successfully cwd dir, so we need reset position to root
     if exists:
-      self.conn.cwd('/')
+      self.conn.cwd(self.config['path'])
 
     return exists
 
