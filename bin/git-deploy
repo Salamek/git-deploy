@@ -82,7 +82,7 @@ class deployer:
             print ('revisions dont match')
             files = git.diff_comitted(remote_rev)
             for u in files['upload']:
-              print (root + '/' + u)
+              print ("Deploying " + root + '/' + u)
               connection.upload_file(root,self.config[x]['path'],u)
 
             for d in files['delete']:
@@ -135,9 +135,22 @@ class FTP:
 
   def upload_file(self,pathf,patht,filename):
     self.conn.cwd(patht)
+
+    self.create_path(os.path.dirname(filename))
     f = open(pathf + '/' + filename, "rb")
     self.conn.storbinary('STOR ' + filename, f)
     f.close()
+
+  def create_path(self,path):
+    splited = path.strip('/').split('/')
+
+    paths = []
+    prev = ''
+    for i in splited:
+      prev += '/' + i
+      paths.append(prev)
+
+    print (paths)
 
   def directory_exists(dir):
     filelist = []
@@ -148,7 +161,7 @@ class FTP:
     return False
 
   def chdir(dir):
-    if self.directory_exists(dir) is False: # (or negate, whatever you prefer for readability)
+    if self.directory_exists(dir) is False:
         self.conn.mkd(dir)
     self.conn.cwd(dir)
 
