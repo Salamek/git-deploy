@@ -8,7 +8,7 @@ ftplib FTP/S support
 subprocess run CMDs
 """
 ok = True
-depedencies = ['sys','os','yaml','ftplib','subprocess','tempfile']
+depedencies = ['sys','os','yaml','ftplib','subprocess','io']
 for dep in depedencies:
   try:
     vars()[dep] = __import__(dep)
@@ -181,10 +181,8 @@ class FTP:
   """
   def upload_string(self,patht,filename,data):
     self.create_path(os.path.dirname(patht + filename))
-    #f = open('/tmp' + filename, "wb")
-    f = tempfile.TemporaryFile(mode='w')
-    f.write(data)
-    self.conn.storlines('STOR ' + filename, f)
+    f = io.BytesIO(bytes(data,'utf8'))
+    self.conn.storbinary('STOR ' + filename, f)
     f.close()
 
 
