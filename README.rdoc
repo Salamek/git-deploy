@@ -5,29 +5,21 @@
 git-deploy is a deployment tool to allow for quick and easy deployments based on
 the changes in a git repository.
 
-It was originally used to update multiple WordPress installations on shared hosting environments.
-Ideally Capistrano would have been the perfect tool, but generally shared hosting environments only
-allow for FTP access, which Capistrano does not support. Likewise rather than using a standard FTP program,
-when doing a deployment, I only need to upload the files that have been changed. This saves me both time and bandwidth.
-
-I needed something like Capistrano, but simpler.
-
-git-deploy supports deployment over SSH and FTP.
+git-deploy supports deployment over SSH and FTP/S.
 
 = Installation
 
-git-deploy requires Python 3
+git-deploy requires Python 3, you can copy git-deploy into your working directory on client side and deploy changes on server manualy or you can put git-deploy on git server into hooks to start deployement after successful commit.
 
 = Usage
 
 In the root directory of your source code, create a <code>deploy.yml</code> file.
 
-Here is a sample code:
+Here is a sample code for FTP acces (skip option can be omitted):
 
   'ftp://example:password@example.com:21/path/to/installation':
     skip: false
 
-You use the URI scheme to define the location of your installation.
 If you do not want to use the URI scheme, and instead use another identifier. Feel free to do so.
 Just enter the settings for the host like so:
 
@@ -42,22 +34,15 @@ Just enter the settings for the host like so:
     overwrite_if_same_revision: true
 
 Note: The port field is optional in both the URI scheme and the broken down options
+Note: git-deploy supports mutiple deploys (you can configure different targets in one config file)
 
-Once you have done creating the <code>deploy.yml</code>, upload to your server a file called +REVISION+ with the revision string for the current revision residing on the server
-
-After you have commited your code to the repository. You can run
-
-  git-deploy
-
+For deploy from client just run <code>git-deploy</code> from your git root directory
 
 == Additional Keys
 
 The configuration for a site has additional and optional options:
 
 * <tt>skip</tt>: +true+ or +false+ (default). Whether to skip the configuration
-* <tt>debug_mode</tt>: +true+ or +false+ (default).  For FTP only. Outputs debugging information
-* <tt>passive</tt>:  +true+ or +false+ (default). For FTP only. Enable passive connection.
-* <tt>local_path</tt>: _string_.  Only consider files to upload in a particular local path.
 
 = How It Works
 
