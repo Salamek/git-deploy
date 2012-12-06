@@ -91,8 +91,10 @@ class deployer:
               print ("Deleting " + self.config[x]['path'] + d)
 
 
-          #deploy revision file
-          connection.upload_string(self.config[x]['path'],self.config[x]['revision_file'],local_rev)
+            #deploy new revision file
+            connection.upload_string(self.config[x]['path'],self.config[x]['revision_file'],local_rev)
+            print ("Deploying done!")
+
     else:
       print ('I was unable to get git root dir!')
 
