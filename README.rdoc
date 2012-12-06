@@ -5,7 +5,7 @@
 git-deploy is a deployment tool to allow for quick and easy deployments based on
 the changes in a git repository.
 
-git-deploy supports deployment over SSH and FTP/S.
+git-deploy supports deployment over SSH, FTP/S and its compatible with https://github.com/aizatto/git-deploy configuration files.
 
 = Installation
 
