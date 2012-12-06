@@ -96,7 +96,7 @@ class deployer:
             print ("Deploying done!")
 
     else:
-      print ('I was unable to get git root dir!')
+      print ('I was unable to get GIT root dir!')
 
 
 #**********************************************************************************************************************
@@ -219,6 +219,13 @@ class FTP:
       self.conn.cwd(self.config['path'])
 
     return exists
+
+  """
+  Method deletes file on FTP
+  @param path path to file to delete
+  """
+  def delete(self,path):
+    self.conn.delete(path)
 
 #*****************************************
 #Class implementing fetching data from GIT
