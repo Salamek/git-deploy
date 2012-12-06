@@ -52,7 +52,7 @@ class deployer:
       for i in config:
         cfg = urlparse(i)
         #config set from parsed URL and default values
-        self.config[i] = {'scheme':cfg.scheme,'host':cfg.hostname,'port':cfg.port,'path':cfg.path,'user':cfg.username,'password':cfg.password,'time_out':10,'revision_file':'REVISION','branch': 'MASTER'}
+        self.config[i] = {'scheme':cfg.scheme,'host':cfg.hostname,'port':cfg.port,'path':cfg.path,'user':cfg.username,'password':cfg.password,'overwrite_if_same_revision': False,'time_out':10,'revision_file':'REVISION','branch': 'MASTER'}
 
         #set additional values
         for c in config[i]:
@@ -65,6 +65,7 @@ class deployer:
     root = git.get_root_dir()
     if os.path.exists(root):
       for x in self.config:
+        print (self.config[x])
         if self.config[x]['skip'] == False:
           if self.config[x]['scheme'] == 'sftp':
             connection = SFTP(self.config[x])
@@ -73,8 +74,14 @@ class deployer:
           else:
             print ('Unknow scheme, please use sftp/ftps/ftp ')
 
-          remote_rev = connection.read_file(self.config[x]['path'],self.config[x]['revision_file'])
+          #We dont need check revision at all
+          if self.config[x]['overwrite_if_same_revision'] is False:
+            remote_rev = connection.read_file(self.config[x]['path'] + self.config[x]['revision_file'])
+          else:
+            remote_rev = ''
+
           local_rev = git.get_revision()
+
           if remote_rev == local_rev:
             print ('Revisions match, skiping deploy on ' + self.config[x]['host'])
           else:
@@ -83,8 +90,8 @@ class deployer:
 
             #upload new/edited files to FTP
             for u in files['upload']:
-              print ("Deploying " + root + '/' + u + ' --> ' + self.config[x]['path'] + u)
-              connection.upload_file(root,self.config[x]['path'],u)
+              print ("Deploying " + root + u + ' --> ' + self.config[x]['path'] + u)
+              connection.upload_file(root + u,self.config[x]['path'] + u)
 
             #delete deleted files on FTP
             for d in files['delete']:
@@ -92,7 +99,7 @@ class deployer:
 
 
             #deploy new revision file
-            connection.upload_string(self.config[x]['path'],self.config[x]['revision_file'],local_rev)
+            connection.upload_string(self.config[x]['path'] + self.config[x]['revision_file'],local_rev)
             print ("Deploying done!")
 
     else:
@@ -138,14 +145,17 @@ class FTP:
     if self.config['user']:
       self.conn.login(self.config['user'],self.config['password'])
 
+    #here i get FTP root
+    self.ftp_root = self.conn.pwd()
+    print (self.ftp_root)
+
   """
   Method reads file on FTP
   @param path path to file
   @param filename name of file to read
   @todo rewrite to use absolute paths
   """
-  def read_file(self,path,filename):
-    self.conn.cwd(path)
+  def read_file(self,filename):
     self.downloaded_data = ''
     try:
       self.conn.retrbinary("RETR " + filename, self.downloaded)
@@ -167,10 +177,10 @@ class FTP:
   @param filename name of file relative to GIT root dir
   @todo only absolute path for file as param?
   """
-  def upload_file(self,pathf,patht,filename):
-    self.create_path(os.path.dirname(patht + filename))
-    f = open(pathf + '/' + filename, "rb")
-    self.conn.storbinary('STOR ' + filename, f)
+  def upload_file(self,pathf,patht):
+    self.create_path(os.path.dirname(patht))
+    f = open(pathf, "rb")
+    self.conn.storbinary('STOR ' + patht, f)
     f.close()
 
   """
@@ -179,10 +189,10 @@ class FTP:
   @param filename name of file relative to GIT root dir
   @todo only absolute path for file as param?
   """
-  def upload_string(self,patht,filename,data):
-    self.create_path(os.path.dirname(patht + filename))
+  def upload_string(self,patht,data):
+    self.create_path(os.path.dirname(patht))
     f = io.BytesIO(bytes(data,'utf8'))
-    self.conn.storbinary('STOR ' + filename, f)
+    self.conn.storbinary('STOR ' + patht, f)
     f.close()
 
 
@@ -197,10 +207,11 @@ class FTP:
       if prev:
         prev += '/' + i
       else:
-        prev = i
+        prev = '/' + i
 
       if prev:
         if self.directory_exists(prev) is False:
+          print ('Creating dir' + prev)
           self.conn.mkd(prev)
 
   """
@@ -216,7 +227,7 @@ class FTP:
 
     #if exists that means we successfully cwd dir, so we need reset position to root
     if exists:
-      self.conn.cwd(self.config['path'])
+      self.conn.cwd('../')
 
     return exists
 
@@ -290,7 +301,7 @@ class GIT:
   @return str path
   """
   def get_root_dir(self):
-    return subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode('utf8').strip()
+    return subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode('utf8').strip() + '/'
 
 
 #rock 'n' roll
