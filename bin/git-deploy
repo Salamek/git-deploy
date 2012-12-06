@@ -146,6 +146,7 @@ class FTP:
 
     #here i get FTP root
     self.ftp_root = self.conn.pwd()
+
     print (self.ftp_root)
 
   """
@@ -226,7 +227,7 @@ class FTP:
 
     #if exists that means we successfully cwd dir, so we need reset position to root
     if exists:
-      self.conn.cwd('../')
+      self.conn.cwd(self.ftp_root)
 
     return exists
 
