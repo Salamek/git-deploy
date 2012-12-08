@@ -95,7 +95,7 @@ class deployer:
               connection.delete(d)
 
             #deploy new revision file
-            #connection.upload_string(self.config[x]['revision_file'],local_rev)
+            connection.upload_string(self.config[x]['revision_file'],local_rev)
             print ("Deploying done!")
 
     else:
