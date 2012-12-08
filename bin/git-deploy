@@ -59,7 +59,6 @@ class deployer:
           self.config[i][c] = config[i][c]
       return True
 
-  #@TODO pass config only in constructor, so remove it from read_file adn upload_file etc
   def sync(self):
     git = GIT()
     root = git.get_root_dir()
