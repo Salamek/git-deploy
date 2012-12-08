@@ -75,7 +75,7 @@ class deployer:
 
           #We dont need check revision at all
           if self.config[x]['overwrite_if_same_revision'] is False:
-            remote_rev = connection.read_file(self.config[x]['path'] + self.config[x]['revision_file'])
+            remote_rev = connection.read_file(self.config[x]['revision_file'])
           else:
             remote_rev = ''
 
@@ -89,8 +89,7 @@ class deployer:
 
             #upload new/edited files to FTP
             for u in files['upload']:
-              print ("Deploying " + root + u + ' --> ' + self.config[x]['path'] + u)
-              connection.upload_file(root + u,self.config[x]['path'] + u)
+              connection.upload_file(root + u,u)
 
             #delete deleted files on FTP
             for d in files['delete']:
@@ -98,7 +97,7 @@ class deployer:
 
 
             #deploy new revision file
-            connection.upload_string(self.config[x]['path'] + self.config[x]['revision_file'],local_rev)
+            connection.upload_string(self.config[x]['revision_file'],local_rev)
             print ("Deploying done!")
 
     else:
@@ -147,18 +146,16 @@ class FTP:
     #here i get FTP root
     self.ftp_root = self.conn.pwd()
 
-    print (self.ftp_root)
-
   """
   Method reads file on FTP
   @param path path to file
   @param filename name of file to read
-  @todo rewrite to use absolute paths
+  @todo use IO
   """
   def read_file(self,filename):
     self.downloaded_data = ''
     try:
-      self.conn.retrbinary("RETR " + filename, self.downloaded)
+      self.conn.retrbinary("RETR " + self.path(filename), self.downloaded)
       return self.downloaded_data.strip()
     except Exception as inst:
       return ''
@@ -174,10 +171,10 @@ class FTP:
   Method uploads file on FTP
   @param pathf path to file on local filesystem
   @param patht path to file on remote filesystem
-  @param filename name of file relative to GIT root dir
-  @todo only absolute path for file as param?
   """
   def upload_file(self,pathf,patht):
+    patht = self.path(patht)
+    print ("Deploying " + pathf + ' --> ' + patht)
     self.create_path(os.path.dirname(patht))
     f = open(pathf, "rb")
     self.conn.storbinary('STOR ' + patht, f)
@@ -186,10 +183,10 @@ class FTP:
   """
   Method uploads string on FTP
   @param patht path to file on remote filesystem
-  @param filename name of file relative to GIT root dir
-  @todo only absolute path for file as param?
+  @param data data to upload
   """
   def upload_string(self,patht,data):
+    patht = self.path(patht)
     self.create_path(os.path.dirname(patht))
     f = io.BytesIO(bytes(data,'utf8'))
     self.conn.storbinary('STOR ' + patht, f)
@@ -197,22 +194,19 @@ class FTP:
 
 
   """
-  Method creates path on FTP, path must be absolute to HTP root!
+  Method creates path on FTP, path must be absolute to FTP root!
   @param path path to create eg.: /libs/test.php where first / is root of FTP
   """
   def create_path(self,path):
     splited = path.strip('/').split('/')
     prev = ''
     for i in splited:
-      if prev:
         prev += '/' + i
-      else:
-        prev = '/' + i
 
-      if prev:
-        if self.directory_exists(prev) is False:
-          print ('Creating dir' + prev)
-          self.conn.mkd(prev)
+        #i need check paths only under FTP root and specified path
+        if self.path().find(prev) == -1:
+          if self.directory_exists(prev) is False:
+            self.conn.mkd(prev)
 
   """
   Method checks if directory exists
@@ -227,8 +221,7 @@ class FTP:
 
     #if exists that means we successfully cwd dir, so we need reset position to root
     if exists:
-      self.conn.cwd(self.ftp_root)
-
+      self.conn.cwd(self.path())
     return exists
 
   """
@@ -237,6 +230,10 @@ class FTP:
   """
   def delete(self,path):
     self.conn.delete(path)
+
+  def path(self,path_on_ftp = '/'):
+    return os.path.join(self.ftp_root,self.config['path'].lstrip('/'),path_on_ftp.lstrip('/'))
+
 
 #*****************************************
 #Class implementing fetching data from GIT
