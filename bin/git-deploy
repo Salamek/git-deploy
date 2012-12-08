@@ -349,12 +349,10 @@ class GIT:
 
 #rock 'n' roll
 if __name__ == "__main__":
-  if ok:
+  try:
+    if ok:
       deployer = deployer()
-  #try:
-  #  if ok:
-  #    deployer = deployer()
-  #  else:
-  #    print ('Exiting...')
-  #except Exception as inst:
-  #  print (str(inst))
+    else:
+      print ('Exiting...')
+  except Exception as inst:
+    print (str(inst))
