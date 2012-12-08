@@ -74,7 +74,7 @@ class deployer:
 
           #We dont need check revision at all
           if self.config[x]['overwrite_if_same_revision'] is False:
-            remote_rev = connection.read_file(self.config[x]['revision_file'])
+            remote_rev = connection.read_file(self.config[x]['revision_file']).decode('utf8').strip()
           else:
             remote_rev = ''
 
@@ -149,22 +149,14 @@ class FTP:
   Method reads file on FTP
   @param path path to file
   @param filename name of file to read
-  @todo use IO
   """
   def read_file(self,filename):
-    self.downloaded_data = ''
+    downloaded_data =  io.BytesIO()
     try:
-      self.conn.retrbinary("RETR " + self.path(filename), self.downloaded)
-      return self.downloaded_data.strip()
+      self.conn.retrbinary("RETR " + self.path(filename), downloaded_data.write)
+      return downloaded_data.getvalue()
     except Exception as inst:
-      return ''
-
-  """
-  Method is used as download handler for read_file method
-  @param data data recived
-  """
-  def downloaded(self,data):
-    self.downloaded_data += data.decode('utf8')
+      return b''
 
   """
   Method uploads file on FTP
