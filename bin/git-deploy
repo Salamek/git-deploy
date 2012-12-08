@@ -107,21 +107,74 @@ class deployer:
 #This truly sux cos PARAMICO is not suported in py 3 i must implement this by simple cmd commands (Only usable on UNIX)
 #**********************************************************************************************************************
 class SFTP:
-  #TODO Implement port set!
-  def read_file(self,path,filename):
-    if 'port' not in config:
-      config['port'] = 22
-    return subprocess.check_output(['ssh', config['user'] + ':' + config['password'] + '@' + config['host'], 'cat ' + path + filename]).decode('utf8').strip()
 
-  def upload_file(self,pathf,patht,filename):
-    if 'port' not in config:
-      config['port'] = 22
-    return subprocess.check_output(['scp', '-P ' + config['port'], pathf + filename, config['user'] + ':' + config['password'] + '@' + config['host'] + ':' + patht]).decode('utf8').strip()
+  def __init__(self,config):
+    self.config = config
+    if 'port' not in self.config:
+      self.config['port'] = 22
+
+  def read_file(self,filename):
+    command = ['ssh']
+    command.append('-p ' + str(self.config['port']))
+
+    if self.config['password']:
+      command.append(self.config['user'] + ':' + self.config['password'] + '@' + self.config['host'])
+    else:
+      command.append(self.config['user'] + '@' + self.config['host'])
+
+      command.append('cat ' + self.path(filename))
+
+    return subprocess.check_output(command).strip()
+
+  def upload_file(self,pathf,patht):
+    patht = self.path(patht)
+    print ("Deploying " + pathf + ' --> ' + patht)
+
+    command = ['scp']
+    command.append('-P ' + str(self.config['port']))
+    command.append(pathf)
+
+    if self.config['password']:
+      command.append(self.config['user'] + ':' + self.config['password'] + '@' + self.config['host'] + ':' + patht)
+    else:
+      command.append(self.config['user'] + '@' + self.config['host'] + ':' + patht)
+
+    return subprocess.check_output(command).decode('utf8').strip()
+
+  def upload_string(self,patht,data):
+    patht = self.path(patht)
+    command = ['ssh']
+    command.append('-p ' + str(self.config['port']))
+
+    if self.config['password']:
+      command.append(self.config['user'] + ':' + self.config['password'] + '@' + self.config['host'])
+    else:
+      command.append(self.config['user'] + '@' + self.config['host'])
+
+    command.append('cat > %s' % patht)
+
+    subprocess.Popen(command,stdin=subprocess.PIPE).communicate(bytes(data,'utf8'))
+
+  def delete(self,path):
+    command = ['ssh']
+    command.append('-p ' + str(self.config['port']))
+
+    if self.config['password']:
+      command.append(self.config['user'] + ':' + self.config['password'] + '@' + self.config['host'])
+    else:
+      command.append(self.config['user'] + '@' + self.config['host'])
+
+      command.append('rm "' + self.path(path) + '"')
+
+    return subprocess.check_output(command).strip()
+
+  def path(self,path_on_remote = '/'):
+    return os.path.join(self.config['path'],path_on_remote.lstrip('/'))
+
 
 
 #*********************************
 #This class handle FTP connections
-#@TODO Check if is posible to use absolute paths on FTP, i dont like solution with cwd and relative path to that dir
 #*********************************
 class FTP:
 
