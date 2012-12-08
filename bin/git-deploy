@@ -217,6 +217,7 @@ class FTP:
   """
   Method deletes file on FTP
   @param path path to file to delete
+  @todo implement tree deleting somehow
   """
   def delete(self,path):
     path = self.path(path)
