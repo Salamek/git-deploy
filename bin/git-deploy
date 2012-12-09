@@ -25,25 +25,44 @@ from urllib.parse import urlparse
 class deployer:
   def __init__(self):
     #Set config file name
-    self.config_file = 'deploy.yml'
+    config_file = 'deploy.yml'
     if 1 in sys.argv:
       self.config_file = sys.argv[1];
 
     ok = True
+
+    #get GIT root
+    if ok:
+      self.git = GIT()
+      self.root = self.git.get_root_dir()
+      if self.root is False:
+        ok = False
+
     #read config file
     if ok:
-      ok = self.read_config()
+      search_paths = [self.root + config_file, config_file]
+
+      found = False
+      for c in search_paths:
+        if found is False:
+          found = self.read_config(c)
+
+      if found is False:
+        ok = False
+        print ("Failed to find configuration file, %s exists in GIT root ?" % (config_file))
 
     #sync what we get
     if ok:
       ok = self.sync()
 
-  def read_config(self):
-    if os.path.isfile(self.config_file)!=True:
-      print ("Failed to parse configuration file, %s exists ?" % (self.config_file))
+  """
+  Method reads config
+  """
+  def read_config(self, config_file):
+    if os.path.isfile(config_file)!=True:
       return False
     else:
-      f = open(self.config_file)
+      f = open(config_file)
       config = yaml.load(f)
       f.close()
 
@@ -59,10 +78,11 @@ class deployer:
           self.config[i][c] = config[i][c]
       return True
 
+  """
+  Method perform sincing
+  """
   def sync(self):
-    git = GIT()
-    root = git.get_root_dir()
-    if os.path.exists(root):
+    if os.path.exists(self.root):
       for x in self.config:
         if self.config[x]['skip'] == False:
           if self.config[x]['scheme'] == 'sftp':
@@ -78,17 +98,17 @@ class deployer:
           else:
             remote_rev = ''
 
-          local_rev = git.get_revision()
+          local_rev = self.git.get_revision()
 
           if remote_rev == local_rev:
             print ('Revisions match, skiping deploy on ' + self.config[x]['host'])
           else:
             print ('Revisions not match, deploying on ' + self.config[x]['host'])
-            files = git.diff_comitted(remote_rev)
+            files = self.git.diff_comitted(remote_rev)
 
             #upload new/edited files to FTP
             for u in files['upload']:
-              connection.upload_file(root + u,u)
+              connection.upload_file(self.root + u,u)
 
             #delete deleted files on FTP
             for d in files['delete']:
