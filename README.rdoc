@@ -37,7 +37,7 @@ Note: The port field is optional in both the URI scheme and the broken down opti
 Note: git-deploy supports mutiple deploys (you can configure different targets in one config file)
 
 == Client
-For deploy from client side just run <code>git-deploy</code> from git root directory
+For deploy from client side just run <code>git deploy</code> from git root directory
 
 == Server
 Currently not supported
