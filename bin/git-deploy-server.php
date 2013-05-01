@@ -101,10 +101,11 @@ class Git
 
 class GitDeploy
 {
-  private $root       = NULL;
-  private $git        = NULL;
-  private $configFile = 'deploy.ini';
-  private $config     = NULL;
+  private $root        = NULL;
+  private $git         = NULL;
+  private $configFile  = 'deploy.ini';
+  private $config      = NULL;
+  private $revisonFile = 'REVISION';
 
   public function __construct($root = NULL) 
   {
@@ -115,7 +116,7 @@ class GitDeploy
       try
       {
         $this->parseConfig();
-        if($this->config['deploy'])
+        if($this->config['deploy']['deploy'])
         {
           $this->deploy();
         }
@@ -136,10 +137,16 @@ class GitDeploy
   {
     if(is_file($this->root.'/'.$this->configFile))
     {
-      $config = parse_ini_file($this->root.'/'.$this->configFile);
+      $config = parse_ini_file($this->root.'/'.$this->configFile,true);
       if($config)
       {
         $this->config = $config;
+        
+        $this->config['uri'] = parse_url($this->config['deploy']['target']);
+        if(!$this->config['uri'])
+        {
+          throw new Exception('Failed to prase URI in config file');
+        }
       }
       else 
       {
@@ -154,7 +161,21 @@ class GitDeploy
   
   private function deploy()
   {
+    $connection = NULL;
+    switch($this->config['uri']['scheme'])
+    {
+      case 'sftp':
+        $connection = new SSH($this->config['uri']['host'], $this->config['uri']['user'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
+        break;
     
+      case 'ftp':
+      case 'ftps':
+        $connection = new FTP($this->config['uri']['host'], $this->config['uri']['user'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
+        break;
+    }
+    
+    
+    print_r($connection);
   }
 
 
@@ -198,6 +219,133 @@ class GitDeploy
             connection.upload_string(self.config[x]['revision_file'],local_rev)
             print ("Deploying done!")*/
 }
+
+class FTP
+{
+  function __construct($host, $user, $port = NULL, $password = NULL) 
+  {
+    echo 'Not implemented yet';
+  }
+}
+
+class SSH
+{
+  private $connection           = NULL;
+  //Keep this empty or NULL for autodetection!
+  private $fingerprints         = array();
+  private $publicKey            = NULL;
+  private $privateKey           = NULL;
+  private $privateKeyPassphrase = NULL;
+  
+  function __construct($host, $user, $port = NULL, $password = NULL)
+  {
+    $this->connection = ssh2_connect($host, $port);
+    if(!$this->connection)
+    {
+      throw new Exception('Failed to connect to server!');
+    }
+    
+    $keyInfo = $this->findKeys();
+    print_r($keyInfo);
+    if(!$this->fingerprints)
+    {
+      $this->fingerprints = $keyInfo['fingerprints'];
+    }
+    
+    if(!$this->publicKey)
+    {
+      $this->publicKey = $keyInfo['publicKey'];
+    }
+    
+    if(!$this->privateKey)
+    {
+      $this->privateKey = $keyInfo['privateKey'];
+    }
+    
+    $fingerprint = ssh2_fingerprint($this->connection, SSH2_FINGERPRINT_MD5 | SSH2_FINGERPRINT_HEX); 
+    if(!in_array($fingerprint, $this->fingerprints))
+    { 
+      throw new Exception('Server has unknow fingerprint :'. $fingerprint); 
+    }
+    
+    //No password, lets try keys
+    if(!$password)
+    {
+      if (!ssh2_auth_pubkey_file($this->connection, $user, $this->publicKey, $this->privateKey, $this->privateKeyPassphrase)) 
+      { 
+        throw new Exception('Autentication rejected by server!'); 
+      } 
+    }
+    else 
+    {
+      if(!ssh2_auth_password($this->connection, $user, $password))
+      {
+        throw new Exception('Failed to log in, incorrect password or login!'); 
+      }
+    }
+  }
+  
+  private function findKeys()
+  {
+    $fingerprintsNames = array('known_hosts');
+    $privateKeysNames  = array('id_rsa');   
+    $publicKeysNames   = array('id_rsa.pub');   
+    $userInfo = posix_getpwuid(getmyuid());
+    
+    $return = array();
+    $return['publicKey']    = '';
+    $return['privateKey']    = '';
+    $return['fingerprints'] = array();
+    
+    if(isset($userInfo['dir']))
+    {
+      $sshDir = $userInfo['dir'].'/.ssh';
+      if(is_dir($sshDir))
+      {
+        //Fingerprints
+        foreach($fingerprintsNames AS $fingerPrintName)
+        {
+          if(is_file($sshDir.'/'.$fingerPrintName))
+          {
+            $lines = file($sshDir.'/'.$fingerPrintName);
+            if(count($lines > 0))
+            {
+              foreach($lines AS $line)
+              {
+                $return['fingerprints'][] = trim($line);
+              }
+            }
+            break;
+          }
+        }
+        
+        //Private Keys
+        foreach($privateKeysNames AS $privateKeyName)
+        {
+          if(is_file($sshDir.'/'.$privateKeyName))
+          {
+            $return['privateKey'] = $sshDir.'/'.$privateKeyName;
+            break;
+          }
+        }
+        
+         //Public Keys
+        foreach($publicKeysNames AS $publicKeyName)
+        {
+          if(is_file($sshDir.'/'.$publicKeyName))
+          {
+            $return['publicKey'] = $sshDir.'/'.$publicKeyName;
+            break;
+          }
+        }
+      }
+    }
+    
+    return $return;
+  }
+}
+
+
 
 
 $git = new GitDeploy('/home/sadam/git/git-deploy');
