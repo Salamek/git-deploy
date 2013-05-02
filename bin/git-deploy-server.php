@@ -290,16 +290,16 @@ class SSH
     $fingerprintsNames = array('known_hosts');
     $privateKeysNames  = array('id_rsa');   
     $publicKeysNames   = array('id_rsa.pub');   
-    $userInfo = posix_getpwuid(getmyuid());
+    $userHome = $_SERVER['HOME'];
     
     $return = array();
     $return['publicKey']    = '';
     $return['privateKey']    = '';
     $return['fingerprints'] = array();
     
-    if(isset($userInfo['dir']))
+    if(isset($userHome))
     {
-      $sshDir = $userInfo['dir'].'/.ssh';
+      $sshDir = $userHome.'/.ssh';
       if(is_dir($sshDir))
       {
         //Fingerprints
