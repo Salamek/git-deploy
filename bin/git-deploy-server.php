@@ -246,11 +246,12 @@ class SSH
     }
     
     $keyInfo = $this->findKeys();
-    print_r($keyInfo);
-    if(!$this->fingerprints)
+
+    /*!FIXME idk how to calculate FP from this or it is possible
+     * if(!$this->fingerprints)
     {
       $this->fingerprints = $keyInfo['fingerprints'];
-    }
+    }*/
     
     if(!$this->publicKey)
     {
@@ -262,11 +263,12 @@ class SSH
       $this->privateKey = $keyInfo['privateKey'];
     }
     
-    $fingerprint = ssh2_fingerprint($this->connection, SSH2_FINGERPRINT_MD5 | SSH2_FINGERPRINT_HEX); 
+    /*!FIXME idk how to calculate FP from this or it is possible
+    $fingerprint = ssh2_fingerprint($this->connection, SSH2_FINGERPRINT_SHA1 | SSH2_FINGERPRINT_HEX); 
     if(!in_array($fingerprint, $this->fingerprints))
     { 
       throw new Exception('Server has unknow fingerprint :'. $fingerprint); 
-    }
+    }*/
     
     //No password, lets try keys
     if(!$password)
