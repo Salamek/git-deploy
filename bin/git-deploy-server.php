@@ -40,11 +40,12 @@ class Git
     $files = '';
     if ($revision)
     {
-      $files .= trim(exec('git diff --name-status'));
+      $files .= trim(exec('git diff --name-status '.$revision));
     }
     else
     {
-      $data = trim(exec('git ls-files '.$this->getGitRoot().'--full-name'));
+      $data = trim(exec('git ls-files '.$this->getGitRoot().' --full-name'));
+      echo $data;
       $arr = explode("\n", $data);
       foreach ($arr AS $line)
       {
@@ -76,6 +77,7 @@ class Git
     {
       foreach ($lines AS $line)
       {
+        echo $line;
         list($action, $filename) = explode('	',trim($line));
         $pathinfo = pathinfo($filename);
         if(!in_array($pathinfo['basename'],$ignore))
@@ -174,8 +176,31 @@ class GitDeploy
         break;
     }
     
+    $revision = NULL;
+    $gitRevision = NULL;
+    try
+    {
+      $revision =  trim($connection->readFile($this->config['uri']['path'].'/'.$this->revisonFile));
+      $gitRevision = trim($this->git->getRevision());
+    }
+    catch(Exception $e)
+    {
+      //here i assume no version file on remote, so invalide version check
+      $revision = '';
+      $gitRevision = sha1('');
+    }
     
-    print_r($connection);
+    //Revision not match, we must get changes and upload it on server
+    if($gitRevision != $revision)
+    {
+      echo sprintf('Remote revision is %s, current revison is %s', $revision, $gitRevision);
+      $files = $this->git->diffCommited($revision);
+      print_r($files);
+    }
+    else
+    {
+      echo 'Revisions match, no deploy needed.';
+    }
   }
 
 
@@ -344,6 +369,24 @@ class SSH
     }
     
     return $return;
+  }
+  
+  
+  public function readFile($filePath)
+  {
+    $tmp = sys_get_temp_dir().'/ssh_file_temp_'.getmypid().'.tmp';
+    $this->getFile($filePath, $tmp);
+    $data = file_get_contents($tmp);
+    unlink($tmp);
+    return $data;
+  }
+  
+  public function getFile($filePath, $fileTarget)
+  {
+    if(!@ssh2_scp_recv($this->connection, $filePath, $fileTarget))
+    {
+      throw new Exception('Failed to copy file from remote server');
+    }
   }
 }
 
