@@ -48,6 +48,7 @@ class GitDeploy
         {
           throw new Exception('Failed to prase URI in config file');
         }
+        print_r($this->config);
       }
       else 
       {
@@ -103,7 +104,19 @@ class GitDeploy
       }
       
       $files = $this->git->diffCommited($revision);
-      print_r($files);
+      
+      foreach($files['upload'] AS $upload)
+      {
+        $connection->uploadFile($this->root.'/'.$upload, $this->config['uri']['path'].'/'.$upload);
+        echo Color::string('Uploading file '.$this->root.'/'.$upload.' --> '.$this->config['uri']['path'].'/'.$upload, 'green', 'black');
+      }
+      
+      foreach($files['delete'] AS $delete)
+      {
+        $connection->deleteFile($this->config['uri']['path'].'/'.$delete);
+      }
+      
+      echo Color::string('Deploying done!', 'white', 'green');
     }
     else
     {
@@ -111,46 +124,6 @@ class GitDeploy
     }
   }
 
-
-
-
-
-
-  /*if os.path.exists(self.root):
-      for x in self.config:
-        if self.config[x]['skip'] == False:
-          if self.config[x]['scheme'] == 'sftp':
-            connection = SFTP(self.config[x])
-          elif self.config[x]['scheme'] == 'ftps' or self.config[x]['scheme'] == 'ftp':
-            connection = FTP(self.config[x])
-          else:
-            print ('Unknow scheme, please use sftp/ftps/ftp ')
-
-          #We dont need check revision at all
-          if self.config[x]['overwrite_if_same_revision'] is False:
-            remote_rev = connection.read_file(self.config[x]['revision_file']).decode('utf8').strip()
-          else:
-            remote_rev = ''
-
-          local_rev = self.git.get_revision()
-
-          if remote_rev == local_rev:
-            print ('Revisions match, skiping deploy on ' + self.config[x]['host'])
-          else:
-            print ('Revisions not match, deploying on ' + self.config[x]['host'])
-            files = self.git.diff_comitted(remote_rev)
-
-            #upload new/edited files to FTP
-            for u in files['upload']:
-              connection.upload_file(self.root + u,u)
-
-            #delete deleted files on FTP
-            for d in files['delete']:
-              connection.delete(d)
-
-            #deploy new revision file
-            connection.upload_string(self.config[x]['revision_file'],local_rev)
-            print ("Deploying done!")*/
 }
 
 class Git
@@ -397,7 +370,23 @@ class SSH
   {
     if(!@ssh2_scp_recv($this->connection, $filePath, $fileTarget))
     {
-      throw new Exception('Failed to copy file from remote server');
+      throw new Exception(sprintf('Failed to copy file %s from remote server', $filePath));
+    }
+  }
+  
+  public function uploadFile($from, $to, $right = 0644)
+  {
+    if(!@ssh2_scp_send($this->connection, $from, $to, $right))
+    {
+      throw new Exception(sprintf('Failed to copy file %s to %s on remote server', $from, $to));
+    }
+  }
+  
+  public function deleteFile($file)
+  {
+    if(!ssh2_sftp_unlink($this->connection, $file))
+    {
+      throw new Exception(sprintf('Failed to delete file %s on remote server', $file));
     }
   }
 }
