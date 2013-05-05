@@ -238,6 +238,54 @@ class FTP
   {
     echo 'Not implemented yet';
   }
+  
+  
+  public function readFile($filePath)
+  {
+    $tmp = sys_get_temp_dir().'/ssh_file_temp_'.getmypid().'.tmp';
+    $this->getFile($filePath, $tmp);
+    $data = file_get_contents($tmp);
+    unlink($tmp);
+    return $data;
+  }
+  
+  public function getFile($filePath, $fileTarget)
+  {
+    /*if(!@ssh2_scp_recv($this->connection, $filePath, $fileTarget))
+    {
+      throw new Exception(sprintf('Failed to copy file %s from remote server', $filePath));
+    }*/
+  }
+  
+  public function uploadFile($from, $to, $premisson = 0755)
+  {
+    /*$this->createPath($to, $premisson);
+    if(!@ssh2_scp_send($this->connection, $from, $to, $premisson))
+    {
+      throw new Exception(sprintf('Failed to copy file %s to %s on remote server', $from, $to));
+    }*/
+  }
+  
+  public function uploadString($filePath, $string, $premisson = 0755)
+  {
+    /*$tmp = sys_get_temp_dir().'/ssh_file_temp_'.getmypid().'.tmp';
+    file_put_contents($tmp,$string);
+    $this->uploadFile($tmp, $filePath, $premisson);
+    unlink($tmp);*/
+  }
+  
+  public function deleteFile($file)
+  {
+    /*if(!ssh2_sftp_unlink($this->sftpConnection, $file))
+    {
+      throw new Exception(sprintf('Failed to delete file %s on remote server', $file));
+    }*/
+  }
+  
+  public function createPath($filePath, $premisson = 0755)
+  {
+
+  }
 }
 
 class SSH
