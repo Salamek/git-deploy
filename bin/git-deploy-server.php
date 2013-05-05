@@ -234,9 +234,25 @@ class Git
 
 class FTP
 {
-  function __construct($host, $user, $port = NULL, $password = NULL) 
+  private $connection = NULL;
+  public function __construct($host, $user, $port = NULL, $password = NULL) 
   {
-    echo 'Not implemented yet';
+    //!FIXME implement ftp_ssl_connect
+    $this->connection = $this->ftp_connect($host, $port);
+    if(!$this->connection)
+    {
+      throw new Exception('Failed to connect to server!');
+    }
+    
+    if(!ftp_login($this->connection, $user, $password))
+    {
+      throw new Exception('Failed to log in, incorrect password or login!'); 
+    }
+  }
+  
+  public function __destruct() 
+  {
+    ftp_close($this->connection);
   }
   
   
@@ -298,7 +314,7 @@ class SSH
   private $privateKey           = NULL;
   private $privateKeyPassphrase = NULL;
   
-  function __construct($host, $user, $port = NULL, $password = NULL)
+  public function __construct($host, $user, $port = NULL, $password = NULL)
   {
     $this->connection = ssh2_connect($host, $port);
     if(!$this->connection)
