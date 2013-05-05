@@ -98,8 +98,8 @@ class GitDeploy
       }
       else
       {
-        $text = sprintf('No remote revision, deploying revision %s', $gitRevision);
-        echo Color::string($text, 'green', 'black');
+        $text = sprintf('No remote revision found, deploying whole project');
+        echo Color::string($text, 'yellow', 'black');
       }
       
       $files = $this->git->diffCommited($revision);
@@ -269,7 +269,7 @@ class SSH
 {
   private $connection           = NULL;
   //Keep this empty or NULL for autodetection!
-  private $fingerprints         = array();
+  //private $fingerprints         = array();
   private $publicKey            = NULL;
   private $privateKey           = NULL;
   private $privateKeyPassphrase = NULL;
@@ -442,12 +442,12 @@ class Color
     self::init();
     $colored_string = '';
 
-    if (in_array($foreground_color, self::$foreground_colors)) 
+    if (array_key_exists($foreground_color, self::$foreground_colors)) 
     {
       $colored_string .= "\033[" . self::$foreground_colors[$foreground_color] . "m";
     }
 
-    if (in_array($background_color, self::$background_colors)) 
+    if (array_key_exists($background_color, self::$background_colors)) 
     {
       $colored_string .= "\033[" . self::$background_colors[$background_color] . "m";
     }
