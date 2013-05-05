@@ -48,7 +48,6 @@ class GitDeploy
         {
           throw new Exception('Failed to prase URI in config file');
         }
-        print_r($this->config);
       }
       else 
       {
@@ -78,10 +77,11 @@ class GitDeploy
     
     $revision = NULL;
     $gitRevision = NULL;
+    $gitRevisionLog = NULL;
     try
     {
+      $gitRevisionLog = $gitRevision = trim($this->git->getRevision());
       $revision =  trim($connection->readFile($this->config['uri']['path'].'/'.$this->revisonFile));
-      $gitRevision = trim($this->git->getRevision());
     }
     catch(Exception $e)
     {
@@ -99,7 +99,7 @@ class GitDeploy
       }
       else
       {
-        $text = sprintf('No remote revision found, deploying whole project');
+        $text = sprintf('No remote revision found, deploying whole project %s', $gitRevisionLog);
         echo Color::string($text, 'yellow', 'black');
       }
       
@@ -115,6 +115,8 @@ class GitDeploy
       {
         $connection->deleteFile($this->config['uri']['path'].'/'.$delete);
       }
+      
+      $connection->uploadString($this->config['uri']['path'].'/'.$this->revisonFile, $gitRevisionLog);
       
       echo Color::string('Deploying done!', 'white', 'green');
     }
@@ -241,6 +243,7 @@ class FTP
 class SSH
 {
   private $connection           = NULL;
+  private $sftpConnection       = NULL;
   //Keep this empty or NULL for autodetection!
   //private $fingerprints         = array();
   private $publicKey            = NULL;
@@ -295,6 +298,9 @@ class SSH
         throw new Exception('Failed to log in, incorrect password or login!'); 
       }
     }
+    
+    //I assume we have connection and logged by key or password, so init sftp connection to mkdir and delete files
+    $this->sftpConnection = ssh2_sftp($this->connection);
   }
   
   private function findKeys()
@@ -374,20 +380,35 @@ class SSH
     }
   }
   
-  public function uploadFile($from, $to, $right = 0644)
+  public function uploadFile($from, $to, $premisson = 0755)
   {
-    if(!@ssh2_scp_send($this->connection, $from, $to, $right))
+    $this->createPath($to, $premisson);
+    if(!@ssh2_scp_send($this->connection, $from, $to, $premisson))
     {
       throw new Exception(sprintf('Failed to copy file %s to %s on remote server', $from, $to));
     }
   }
   
+  public function uploadString($filePath, $string, $premisson = 0755)
+  {
+    $tmp = sys_get_temp_dir().'/ssh_file_temp_'.getmypid().'.tmp';
+    file_put_contents($tmp,$string);
+    $this->uploadFile($tmp, $filePath, $premisson);
+    unlink($tmp);
+  }
+  
   public function deleteFile($file)
   {
-    if(!ssh2_sftp_unlink($this->connection, $file))
+    if(!ssh2_sftp_unlink($this->sftpConnection, $file))
     {
       throw new Exception(sprintf('Failed to delete file %s on remote server', $file));
     }
+  }
+  
+  public function createPath($filePath, $premisson = 0755)
+  {
+    $dirs = pathinfo($filePath,PATHINFO_DIRNAME);
+    ssh2_sftp_mkdir($this->sftpConnection, $dirs, $premisson, TRUE);
   }
 }
 
