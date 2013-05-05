@@ -1,113 +1,5 @@
 #!/usr/bin/php
 <?php
-class Git
-{
-  private $root = NULL;
-  public function __construct() 
-  {
-    if(!$this->isGit()) throw new Exception ('Git not found!');
-  }
-  
-  public function isGit() 
-  {
-    $status = exec('git 2> /dev/null');
-    if($status)
-    {
-      return true;
-    }
-    return false;
-  }
-  
-  public function hasGit($dir)
-  {
-    return is_dir($dir.'/.git');
-  }
-  
-  public function getRevision()
-  {
-    return trim(exec('git rev-parse HEAD'));
-  }
-  
-  public function diffUncommitted()
-  {
-    $data = trim(exec('git diff --name-status'));
-    $data .= trim(exec('git diff --cached --name-status'));
-    return $this->gitParseFiles($data);
-  }
-  
-  public function diffCommited($revision = NULL)
-  {
-    $files = '';
-    if ($revision)
-    {
-      $files .= trim(exec('git diff --name-status '.$revision));
-    }
-    else
-    {
-      $data = trim(exec('git ls-files '.$this->getGitRoot().'  --full-name'));
-      $data = trim(exec('git ls-tree --full-tree -r HEAD'));
-      echo $data.PHP_EOL;
-      echo $this->getGitRoot().PHP_EOL;
-      
-      //Use PHP_EOL here cos git file is generated on same system
-      $arr = explode(PHP_EOL, $data); 
-      foreach ($arr AS $line)
-      {
-        $files .= 'M	' + $line + "\n";
-      }
-    }
-    return $this->gitParseFiles($files);
-  }
-  
-  public function getGitRoot($root = NULL)
-  {
-    if(!$root)
-    {
-      $this->root = trim(exec('git rev-parse --show-toplevel'));
-    }
-    else 
-    {
-      $this->root = $root;
-    }
-    return $this->root;
-  }
-
-  private function gitParseFiles($data)
-  {
-    $ignore = array('.gitignore');
-    $lines = explode("\n", $data);
-    $return = array('upload' => array(), 'delete' => array());
-    if(count($lines) > 0)
-    {
-      foreach ($lines AS $line)
-      {
-        if($line)
-        {
-          $line_r = explode('	',trim($line));
-          list($action, $filename) = $line_r;
-
-          $pathinfo = pathinfo($filename);
-          if(!in_array($pathinfo['basename'],$ignore))
-          {
-            switch($action)
-            {
-              case 'A':
-              case 'M':
-              case 'C':
-                $return['upload'][] = $filename;
-                break;
-
-              case 'D':
-                $return['delete'][] = $filename;
-                break;
-            }
-          }
-        }
-      }
-    }
-    return $return;
-  }
-}
 
 class GitDeploy
 {
@@ -130,16 +22,15 @@ class GitDeploy
         {
           $this->deploy();
         }
-        //print_r($this->config);
       }
       catch(Exception $e)
       {
-        echo $e->getMessage();
+        echo Color::string($e->getMessage(), 'white', 'red');
       }
     }
     catch(Exception $e)
     {
-      echo $e->getMessage();
+      echo Color::string($e->getMessage(), 'white', 'red');
     }
   }
   
@@ -194,19 +85,29 @@ class GitDeploy
     catch(Exception $e)
     {
       //here i assume no version file on remote, so invalide version check
-      $gitRevision = sha1('');
+      $gitRevision = FALSE;
     }
     
     //Revision not match, we must get changes and upload it on server
-    if($gitRevision != $revision)
+    if($gitRevision !== $revision)
     {
-      echo sprintf('Remote revision is %s, current revison is %s'.PHP_EOL, $revision, $gitRevision);
+      if($revision && $gitRevision)
+      {
+        $text = sprintf('Remote revision is %s, current revison is %s', $revision, $gitRevision);
+        echo Color::string($text, 'green', 'black');
+      }
+      else
+      {
+        $text = sprintf('No remote revision, deploying revision %s', $gitRevision);
+        echo Color::string($text, 'green', 'black');
+      }
+      
       $files = $this->git->diffCommited($revision);
-      //print_r($files);
+      print_r($files);
     }
     else
     {
-      echo 'Revisions match, no deploy needed.'.PHP_EOL;
+      echo Color::string('Revisions match, no deploy needed.', 'white', 'green');
     }
   }
 
@@ -250,6 +151,110 @@ class GitDeploy
             #deploy new revision file
             connection.upload_string(self.config[x]['revision_file'],local_rev)
             print ("Deploying done!")*/
+}
+
+class Git
+{
+  private $root = NULL;
+  public function __construct() 
+  {
+    if(!$this->isGit()) throw new Exception ('Git not found!');
+  }
+  
+  public function isGit() 
+  {
+    $status = exec('git 2> /dev/null');
+    if($status)
+    {
+      return true;
+    }
+    return false;
+  }
+  
+  public function hasGit($dir)
+  {
+    return is_dir($dir.'/.git');
+  }
+  
+  public function getRevision()
+  {
+    return trim(exec('git rev-parse HEAD'));
+  }
+  
+  public function diffUncommitted()
+  {
+    $data = array();
+    exec('git diff --name-status', $data);
+    exec('git diff --cached --name-status', $data);
+    return $this->gitParseFiles($data);
+  }
+  
+  public function diffCommited($revision = NULL)
+  {
+    $files = array();
+    if ($revision)
+    {
+      exec('git diff --name-status '.$revision, $files);
+    }
+    else
+    {
+      $data = array();
+      exec('git ls-files '.$this->getGitRoot().'  --full-name', $data);
+      foreach ($data AS $line)
+      {
+        $files[] = 'M	'.$line;
+      }
+    }
+    return $this->gitParseFiles($files);
+  }
+  
+  public function getGitRoot($root = NULL)
+  {
+    if(!$root)
+    {
+      $this->root = trim(exec('git rev-parse --show-toplevel'));
+    }
+    else 
+    {
+      $this->root = $root;
+    }
+    return $this->root;
+  }
+
+  private function gitParseFiles($data)
+  {
+    $ignore = array('.gitignore');
+    $return = array('upload' => array(), 'delete' => array());
+    if(count($data) > 0)
+    {
+      foreach ($data AS $line)
+      {
+        if($line)
+        {
+          $line_r = explode('	',trim($line));
+          list($action, $filename) = $line_r;
+
+          $pathinfo = pathinfo($filename);
+          if(!in_array($pathinfo['basename'],$ignore))
+          {
+            switch($action)
+            {
+              case 'A':
+              case 'M':
+              case 'C':
+                $return['upload'][] = $filename;
+                break;
+
+              case 'D':
+                $return['delete'][] = $filename;
+                break;
+            }
+          }
+        }
+      }
+    }
+    return $return;
+  }
 }
 
 class FTP
@@ -397,7 +402,61 @@ class SSH
   }
 }
 
+class Color
+{
+  public static $foreground_colors = array();
+  public static $background_colors = array();
 
+
+  public static function init() 
+  {
+    self::$foreground_colors['black']         = '0;30';
+    self::$foreground_colors['dark_gray']     = '1;30';
+    self::$foreground_colors['blue']          = '0;34';
+    self::$foreground_colors['light_blue']    = '1;34';
+    self::$foreground_colors['green']         = '0;32';
+    self::$foreground_colors['light_green']   = '1;32';
+    self::$foreground_colors['cyan']          = '0;36';
+    self::$foreground_colors['light_cyan']    = '1;36';
+    self::$foreground_colors['red']           = '0;31';
+    self::$foreground_colors['light_red']     = '1;31';
+    self::$foreground_colors['purple']        = '0;35';
+    self::$foreground_colors['light_purple']  = '1;35';
+    self::$foreground_colors['brown']         = '0;33';
+    self::$foreground_colors['yellow']        = '1;33';
+    self::$foreground_colors['light_gray']    = '0;37';
+    self::$foreground_colors['white']         = '1;37';
+
+    self::$background_colors['black']         = '40';
+    self::$background_colors['red']           = '41';
+    self::$background_colors['green']         = '42';
+    self::$background_colors['yellow']        = '43';
+    self::$background_colors['blue']          = '44';
+    self::$background_colors['magenta']       = '45';
+    self::$background_colors['cyan']          = '46';
+    self::$background_colors['light_gray']    = '47';
+  }
+
+  public static function string($string, $foreground_color = NULL, $background_color = NULL) 
+  {
+    self::init();
+    $colored_string = '';
+
+    if (in_array($foreground_color, self::$foreground_colors)) 
+    {
+      $colored_string .= "\033[" . self::$foreground_colors[$foreground_color] . "m";
+    }
+
+    if (in_array($background_color, self::$background_colors)) 
+    {
+      $colored_string .= "\033[" . self::$background_colors[$background_color] . "m";
+    }
+
+    $colored_string .=  $string . "\033[0m";
+
+    return $colored_string.PHP_EOL;
+	}
+}
 
 
 $git = new GitDeploy('/home/sadam/git/git-deploy');
