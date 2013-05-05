@@ -44,9 +44,13 @@ class Git
     }
     else
     {
-      $data = trim(exec('git ls-files '.$this->getGitRoot().' --full-name'));
-      echo $data;
-      $arr = explode("\n", $data);
+      $data = trim(exec('git ls-files '.$this->getGitRoot().'  --full-name'));
+      $data = trim(exec('git ls-tree --full-tree -r HEAD'));
+      echo $data.PHP_EOL;
+      echo $this->getGitRoot().PHP_EOL;
+      
+      //Use PHP_EOL here cos git file is generated on same system
+      $arr = explode(PHP_EOL, $data); 
       foreach ($arr AS $line)
       {
         $files .= 'M	' + $line + "\n";
@@ -77,22 +81,26 @@ class Git
     {
       foreach ($lines AS $line)
       {
-        echo $line;
-        list($action, $filename) = explode('	',trim($line));
-        $pathinfo = pathinfo($filename);
-        if(!in_array($pathinfo['basename'],$ignore))
+        if($line)
         {
-          switch($action)
+          $line_r = explode('	',trim($line));
+          list($action, $filename) = $line_r;
+
+          $pathinfo = pathinfo($filename);
+          if(!in_array($pathinfo['basename'],$ignore))
           {
-            case 'A':
-            case 'M':
-            case 'C':
-              $return['upload'][] = $filename;
-              break;
-            
-            case 'D':
-              $return['delete'][] = $filename;
-              break;
+            switch($action)
+            {
+              case 'A':
+              case 'M':
+              case 'C':
+                $return['upload'][] = $filename;
+                break;
+
+              case 'D':
+                $return['delete'][] = $filename;
+                break;
+            }
           }
         }
       }
@@ -122,7 +130,7 @@ class GitDeploy
         {
           $this->deploy();
         }
-        print_r($this->config);
+        //print_r($this->config);
       }
       catch(Exception $e)
       {
@@ -186,20 +194,19 @@ class GitDeploy
     catch(Exception $e)
     {
       //here i assume no version file on remote, so invalide version check
-      $revision = '';
       $gitRevision = sha1('');
     }
     
     //Revision not match, we must get changes and upload it on server
     if($gitRevision != $revision)
     {
-      echo sprintf('Remote revision is %s, current revison is %s', $revision, $gitRevision);
+      echo sprintf('Remote revision is %s, current revison is %s'.PHP_EOL, $revision, $gitRevision);
       $files = $this->git->diffCommited($revision);
-      print_r($files);
+      //print_r($files);
     }
     else
     {
-      echo 'Revisions match, no deploy needed.';
+      echo 'Revisions match, no deploy needed.'.PHP_EOL;
     }
   }
 
