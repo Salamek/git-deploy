@@ -70,8 +70,11 @@ class GitDeploy
         break;
     
       case 'ftp':
-      case 'ftps':
         $connection = new FTP($this->config['uri']['host'], $this->config['uri']['user'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
+        break;
+      
+      case 'ftps':
+        $connection = new FTPS($this->config['uri']['host'], $this->config['uri']['user'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
         break;
     }
     
@@ -232,12 +235,28 @@ class Git
   }
 }
 
+class FTPS extends FTP
+{
+  public function __construct($host, $user, $port = NULL, $password = NULL) 
+  {
+    $this->connection = $this->ftp_ssl_connect($host, $port);
+    if(!$this->connection)
+    {
+      throw new Exception('Failed to connect to server!');
+    }
+    
+    if(!ftp_login($this->connection, $user, $password))
+    {
+      throw new Exception('Failed to log in, incorrect password or login!'); 
+    }
+  }
+}
+
 class FTP
 {
   private $connection = NULL;
   public function __construct($host, $user, $port = NULL, $password = NULL) 
   {
-    //!FIXME implement ftp_ssl_connect
     $this->connection = $this->ftp_connect($host, $port);
     if(!$this->connection)
     {
@@ -258,7 +277,7 @@ class FTP
   
   public function readFile($filePath)
   {
-    $tmp = sys_get_temp_dir().'/ssh_file_temp_'.getmypid().'.tmp';
+    $tmp = sys_get_temp_dir().'/ftp_file_temp_'.getmypid().'.tmp';
     $this->getFile($filePath, $tmp);
     $data = file_get_contents($tmp);
     unlink($tmp);
@@ -267,40 +286,80 @@ class FTP
   
   public function getFile($filePath, $fileTarget)
   {
-    /*if(!@ssh2_scp_recv($this->connection, $filePath, $fileTarget))
+    $handle = fopen($fileTarget, 'w');
+    $status = ftp_fget($this->connection, $handle, $filePath, FTP_BINARY, 0);
+    fclose($handle);
+    
+    if(!$status)
     {
       throw new Exception(sprintf('Failed to copy file %s from remote server', $filePath));
-    }*/
+    }
   }
   
   public function uploadFile($from, $to, $premisson = 0755)
   {
-    /*$this->createPath($to, $premisson);
-    if(!@ssh2_scp_send($this->connection, $from, $to, $premisson))
+    $handle = fopen($from, 'r');
+    $status = ftp_fput($this->connection, $to, $handle, FTP_BINARY);
+    fclose($handle);
+    if(!$status)
     {
       throw new Exception(sprintf('Failed to copy file %s to %s on remote server', $from, $to));
-    }*/
+    }
+    $this->setPremission($to, $premisson);
   }
   
   public function uploadString($filePath, $string, $premisson = 0755)
   {
-    /*$tmp = sys_get_temp_dir().'/ssh_file_temp_'.getmypid().'.tmp';
+    $tmp = sys_get_temp_dir().'/ftp_file_temp_'.getmypid().'.tmp';
     file_put_contents($tmp,$string);
     $this->uploadFile($tmp, $filePath, $premisson);
-    unlink($tmp);*/
+    unlink($tmp);
   }
   
   public function deleteFile($file)
   {
-    /*if(!ssh2_sftp_unlink($this->sftpConnection, $file))
+    if(!ftp_delete($this->connection, $file))
     {
       throw new Exception(sprintf('Failed to delete file %s on remote server', $file));
-    }*/
+    }
   }
   
   public function createPath($filePath, $premisson = 0755)
   {
-
+    $dirs = pathinfo($filePath,PATHINFO_DIRNAME);
+    $dirArray =  explode('/', $dirs);
+    
+    $dirPath = '';
+    $status = true;
+    foreach($dirArray AS $dir)
+    {
+      $dirPath .= $dir.'/';
+      if(!@ftp_chdir($this->connection, $dirPath))
+      {
+        if($status)
+        {
+          $status = ftp_mkdir($this->connection, $dirPath);
+          if($status)
+          {
+            $this->setPremission($dirPath, $premisson);
+          }
+        }
+        else 
+        {
+          break;
+        }
+      }
+    }
+    
+    if(!$status)
+    {
+      throw new Exception(sprintf('Failed to create path on remote server', $dirs));
+    }
+  }
+  
+  private function setPremission($filePath, $premisson)
+  {
+    ftp_chmod($this->connection, $premisson, $filePath);
   }
 }
 
