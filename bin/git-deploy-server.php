@@ -264,13 +264,13 @@ class FTPS extends FTP
 {
   public function __construct($host, $user, $port = NULL, $password = NULL) 
   {
-    $this->connection = ftp_ssl_connect($host, $port);
+    $this->connection = @ftp_ssl_connect($host, $port);
     if(!$this->connection)
     {
       throw new Exception('Failed to connect to server!');
     }
-    
-    if(!ftp_login($this->connection, $user, $password))
+
+    if(!@ftp_login($this->connection, $user, $password))
     {
       throw new Exception('Failed to log in, incorrect password or login!'); 
     }
@@ -279,16 +279,16 @@ class FTPS extends FTP
 
 class FTP
 {
-  private $connection = NULL;
+  public $connection = NULL;
   public function __construct($host, $user, $port = NULL, $password = NULL) 
   {
-    $this->connection = ftp_connect($host, $port);
+    $this->connection = @ftp_connect($host, $port);
     if(!$this->connection)
     {
       throw new Exception('Failed to connect to server!');
     }
     
-    if(!ftp_login($this->connection, $user, $password))
+    if(!@ftp_login($this->connection, $user, $password))
     {
       throw new Exception('Failed to log in, incorrect password or login!'); 
     }
