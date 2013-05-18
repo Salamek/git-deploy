@@ -239,7 +239,7 @@ class FTPS extends FTP
 {
   public function __construct($host, $user, $port = NULL, $password = NULL) 
   {
-    $this->connection = $this->ftp_ssl_connect($host, $port);
+    $this->connection = ftp_ssl_connect($host, $port);
     if(!$this->connection)
     {
       throw new Exception('Failed to connect to server!');
@@ -257,7 +257,7 @@ class FTP
   private $connection = NULL;
   public function __construct($host, $user, $port = NULL, $password = NULL) 
   {
-    $this->connection = $this->ftp_connect($host, $port);
+    $this->connection = ftp_connect($host, $port);
     if(!$this->connection)
     {
       throw new Exception('Failed to connect to server!');
