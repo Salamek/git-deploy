@@ -110,13 +110,15 @@ class GitDeploy
       
       foreach($files['upload'] AS $upload)
       {
-        $connection->uploadFile($this->root.'/'.$upload, $this->config['uri']['path'].'/'.$upload);
-        echo Color::string('Uploading file '.$this->root.'/'.$upload.' --> '.$this->config['uri']['path'].'/'.$upload, 'green', 'black');
+        $premisson = $this->checkPremisson($upload);
+        $connection->uploadFile($this->root.'/'.$upload, $this->config['uri']['path'].'/'.$upload, $premisson);
+        echo Color::string('++ Deploying file '.$this->root.'/'.$upload.' --> '.$this->config['uri']['path'].'/'.$upload, 'green', 'black');
       }
       
       foreach($files['delete'] AS $delete)
       {
         $connection->deleteFile($this->config['uri']['path'].'/'.$delete);
+        echo Color::string('-- Deleting file '.$delete, 'green', 'black');
       }
       
       $connection->uploadString($this->config['uri']['path'].'/'.$this->revisonFile, $gitRevisionLog);
@@ -127,6 +129,29 @@ class GitDeploy
     {
       echo Color::string('Revisions match, no deploy needed.', 'white', 'green');
     }
+  }
+  
+  private function checkPremisson($filename)
+  {
+    foreach($this->config['file_rights'] AS $k => $v)
+    {
+      if($this->endsWith($filename,$k) !== FALSE)
+      {
+        return octdec($v);
+      }
+    }
+    return NULL;
+  }
+  
+  private function endsWith($haystack, $needle)
+  {
+    $length = strlen($needle);
+    if ($length == 0) 
+    {
+      return true;
+    }
+
+    return (substr($haystack, -$length) === $needle);
   }
 
 }
@@ -296,7 +321,7 @@ class FTP
     }
   }
   
-  public function uploadFile($from, $to, $premisson = 0755)
+  public function uploadFile($from, $to, $premisson = NULL)
   {
     $this->createPath($to, $premisson);
     $handle = fopen($from, 'r');
@@ -309,7 +334,7 @@ class FTP
     $this->setPremission($to, $premisson);
   }
   
-  public function uploadString($filePath, $string, $premisson = 0755)
+  public function uploadString($filePath, $string, $premisson = NULL)
   {
     $tmp = sys_get_temp_dir().'/ftp_file_temp_'.getmypid().'.tmp';
     file_put_contents($tmp,$string);
@@ -325,7 +350,7 @@ class FTP
     }
   }
   
-  public function createPath($filePath, $premisson = 0755)
+  public function createPath($filePath, $premisson = NULL)
   {
     $dirs = pathinfo($filePath,PATHINFO_DIRNAME);
     $dirArray =  explode('/', $dirs);
@@ -360,9 +385,12 @@ class FTP
   
   private function setPremission($filePath, $premisson)
   {
-    if(!@ftp_chmod($this->connection, $premisson, $filePath))
+    if($premisson)
     {
-      throw new Exception(sprintf('Failed to set premisson on', $filePath));
+      if(!@ftp_chmod($this->connection, $premisson, $filePath))
+      {
+        throw new Exception(sprintf('Failed to set premisson on', $filePath));
+      }
     }
   }
 }
