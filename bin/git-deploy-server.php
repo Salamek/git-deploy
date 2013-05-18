@@ -287,7 +287,7 @@ class FTP
   public function getFile($filePath, $fileTarget)
   {
     $handle = fopen($fileTarget, 'w');
-    $status = ftp_fget($this->connection, $handle, $filePath, FTP_BINARY, 0);
+    $status = @ftp_fget($this->connection, $handle, $filePath, FTP_BINARY, 0);
     fclose($handle);
     
     if(!$status)
@@ -298,8 +298,9 @@ class FTP
   
   public function uploadFile($from, $to, $premisson = 0755)
   {
+    $this->createPath($to, $premisson);
     $handle = fopen($from, 'r');
-    $status = ftp_fput($this->connection, $to, $handle, FTP_BINARY);
+    $status = @ftp_fput($this->connection, $to, $handle, FTP_BINARY);
     fclose($handle);
     if(!$status)
     {
@@ -318,7 +319,7 @@ class FTP
   
   public function deleteFile($file)
   {
-    if(!ftp_delete($this->connection, $file))
+    if(!@ftp_delete($this->connection, $file))
     {
       throw new Exception(sprintf('Failed to delete file %s on remote server', $file));
     }
@@ -338,7 +339,7 @@ class FTP
       {
         if($status)
         {
-          $status = ftp_mkdir($this->connection, $dirPath);
+          $status = @ftp_mkdir($this->connection, $dirPath);
           if($status)
           {
             $this->setPremission($dirPath, $premisson);
@@ -359,7 +360,10 @@ class FTP
   
   private function setPremission($filePath, $premisson)
   {
-    ftp_chmod($this->connection, $premisson, $filePath);
+    if(!@ftp_chmod($this->connection, $premisson, $filePath))
+    {
+      throw new Exception(sprintf('Failed to set premisson on', $filePath));
+    }
   }
 }
 
