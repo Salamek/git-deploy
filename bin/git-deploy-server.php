@@ -255,7 +255,7 @@ class GitDeployServer
 
   private function sync()
   {
-    if (is_dir($this->tmp_dir))
+    if (is_dir($this->tmp))
     {
       exec('unset GIT_DIR && cd ' . $this->tmp . ' && git pull');
     }
