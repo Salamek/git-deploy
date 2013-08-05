@@ -185,6 +185,96 @@ class GitDeploy
   }
 }
 
+
+/**
+ * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
+ * Recommended git server is GitLab http://gitlab.org/
+ * rename as post-receive -> /home/git/gitlab-shell/hooks/post-receive
+ */
+class GitDeployServer
+{
+  /**
+   * Domain where git server is running, fill in only when running with "unknow git server"
+   * @var string 
+   */
+  private $git_host = 'www.gitlab.loc';
+  
+  /**
+   * Path to git repositories, fill in only when running with "unknow git server"
+   * @var string 
+   */
+  private $repository_path = '/home/git/repositories/';
+  
+  /**
+   * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
+   * @var string 
+   */
+  private $git_user = 'git';
+  
+  /**
+   * Specifies name of TMP dir, its created in server repo root
+   * @var string 
+   */
+  private $tmp_dir = 'deploy_tmp';
+  
+  private $self_path;
+  private $ssh_path;
+  private $stdin;
+  private $previous_revision;
+  private $branch;
+  public $current_revision;
+  public $tmp;
+  
+  public function __construct()
+  {
+    //Get data
+    $this->stdin = trim(fgets(STDIN));
+    $this->self_path = getcwd();
+    $this->git_user = get_current_user();
+    
+    //Build needed info
+    $this->ssh_path = $this->git_user.'@'.$this->git_host.':'.str_replace($this->repository_path, '', $this->self_path);
+    
+    //Parse stdin
+    list($prev, $current, $branch) =  explode(' ', $this->stdin);
+    $this->previous_revision = $prev;
+    $this->current_revision = $current;
+    $this->branch = end(explode('/', $branch));
+    
+    //Separate tmp repos per branch
+    $this->tmp_dir = $this->tmp_dir.'/'.$this->branch;
+    
+    $this->tmp = $this->self_path.'/'.$this->tmp_dir;
+    
+    $this->sync();
+    $this->deploy();
+  }
+  
+  private function sync()
+  {
+    if(is_dir($this->tmp_dir))
+    {
+      exec('unset GIT_DIR && cd '.$this->tmp.' && git pull');
+    }
+    else
+    {
+      exec('git clone -b '.$this->branch.' '.$this->ssh_path.' '.$this->tmp); //Create new TMP repo
+    }
+  }
+  
+  private function deploy()
+  {
+    if(class_exists('GitDeploy'))
+    {
+      new GitDeploy($this);
+    }
+    else
+    {
+      throw new Exception('GitDeploy not found!');
+    }
+  }
+}
+
 /**
  * This class handes work with git repository by executing git commands
  */
@@ -221,7 +311,7 @@ class Git
    */
   public function setBranch($branch)
   {
-    exec('git checkout '.$branch);
+    exec('unset GIT_DIR && cd ' . $this->root . ' && git checkout '.$branch);
   }
   
   /**
@@ -240,7 +330,7 @@ class Git
    */
   public function getRevision()
   {
-    return trim(exec('git rev-parse HEAD'));
+    return trim(exec('unset GIT_DIR && cd ' . $this->root . ' && git rev-parse HEAD'));
   }
   
   /**
@@ -250,8 +340,8 @@ class Git
   public function diffUncommitted()
   {
     $data = array();
-    exec('git diff --name-status', $data);
-    exec('git diff --cached --name-status', $data);
+    exec('unset GIT_DIR && cd ' . $this->root . ' && git diff --name-status', $data);
+    exec('unset GIT_DIR && cd ' . $this->root . ' && git diff --cached --name-status', $data);
     return $this->gitParseFiles($data);
   }
   
@@ -265,12 +355,12 @@ class Git
     $files = array();
     if ($revision)
     {
-      exec('git diff --name-status '.$revision, $files);
+      exec('unset GIT_DIR && cd ' . $this->root . ' && git diff --name-status '.$revision, $files);
     }
     else
     {
       $data = array();
-      exec('git ls-files '.$this->getGitRoot().'  --full-name', $data);
+      exec('unset GIT_DIR && cd ' . $this->root . ' && git ls-files '.$this->getGitRoot().'  --full-name', $data);
       foreach ($data AS $line)
       {
         $files[] = 'M	'.$line;
@@ -764,95 +854,6 @@ class SSH
   {
     $dirs = pathinfo($filePath,PATHINFO_DIRNAME);
     ssh2_sftp_mkdir($this->sftpConnection, $dirs, $premisson, TRUE);
-  }
-}
-
-/**
- * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
- * Recommended git server is GitLab http://gitlab.org/
- * rename as post-receive -> /home/git/gitlab-shell/hooks/post-receive
- */
-class GitDeployServer
-{
-  /**
-   * Domain where git server is running, fill in only when running with "unknow git server"
-   * @var string 
-   */
-  private $git_host = 'www.gitlab.loc';
-  
-  /**
-   * Path to git repositories, fill in only when running with "unknow git server"
-   * @var string 
-   */
-  private $repository_path = '/home/git/repositories/';
-  
-  /**
-   * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
-   * @var string 
-   */
-  private $git_user = 'git';
-  
-  /**
-   * Specifies name of TMP dir, its created in server repo root
-   * @var string 
-   */
-  private $tmp_dir = 'deploy_tmp';
-  
-  private $self_path;
-  private $ssh_path;
-  private $stdin;
-  private $previous_revision;
-  private $branch;
-  public $current_revision;
-  public $tmp;
-  
-  public function __construct()
-  {
-    //Get data
-    $this->stdin = trim(fgets(STDIN));
-    $this->self_path = getcwd();
-    $this->git_user = get_current_user();
-    
-    //Build needed info
-    $this->ssh_path = $this->git_user.'@'.$this->git_host.':'.str_replace($this->repository_path, '', $this->self_path);
-    
-    //Parse stdin
-    list($prev, $current, $branch) =  explode(' ', $this->stdin);
-    $this->previous_revision = $prev;
-    $this->current_revision = $current;
-    $this->branch = end(explode('/', $branch));
-    
-    //Separate tmp repos per branch
-    $this->tmp_dir = $this->tmp_dir.'/'.$this->branch;
-    
-    $this->tmp = $this->self_path.'/'.$this->tmp_dir;
-    
-    $this->sync();
-    $this->deploy();
-  }
-  
-  private function sync()
-  {
-    if(is_dir($this->tmp_dir))
-    {
-      exec('unset GIT_DIR && cd '.$this->tmp.' && git pull');
-    }
-    else
-    {
-      exec('git clone -b '.$this->branch.' '.$this->ssh_path.' '.$this->tmp); //Create new TMP repo
-    }
-  }
-  
-  private function deploy()
-  {
-    if(class_exists('GitDeploy'))
-    {
-      new GitDeploy($this);
-    }
-    else
-    {
-      throw new Exception('GitDeploy not found!');
-    }
   }
 }
 
