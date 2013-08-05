@@ -79,10 +79,10 @@ class GitDeploy
         throw new Exception('Failed to parse '.$this->root.'/'.$this->configFile);
       }
     }
-    else 
+    /*else 
     {
       throw new Exception($this->root.'/'.$this->configFile.' not found!');
-    }
+    }*/
   }
   
   /**
