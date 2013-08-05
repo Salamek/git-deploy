@@ -94,15 +94,15 @@ class GitDeploy
     switch($this->config['uri']['scheme'])
     {
       case 'sftp':
-        $connection = new SSH($this->config['uri']['host'], $this->config['uri']['user'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
+        $connection = new SSH($this->config['uri']['host'], $this->config['uri']['user'], $this->config['uri']['path'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
         break;
     
       case 'ftp':
-        $connection = new FTP($this->config['uri']['host'], $this->config['uri']['user'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
+        $connection = new FTP($this->config['uri']['host'], $this->config['uri']['user'], $this->config['uri']['path'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
         break;
       
       case 'ftps':
-        $connection = new FTPS($this->config['uri']['host'], $this->config['uri']['user'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
+        $connection = new FTPS($this->config['uri']['host'], $this->config['uri']['user'], $this->config['uri']['path'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
         break;
     }
     
@@ -176,31 +176,13 @@ class GitDeploy
   {
     foreach($this->config['file_rights'] AS $k => $v)
     {
-      if($this->endsWith($filename,$k) !== FALSE)
+      if(Tools::endsWith($filename,$k) !== FALSE)
       {
         return octdec($v);
       }
     }
     return NULL;
   }
-  
-  /**
-   * Helper method checks if string ends with a string :)
-   * @param string $haystack
-   * @param string $needle
-   * @return boolean
-   */
-  private function endsWith($haystack, $needle)
-  {
-    $length = strlen($needle);
-    if ($length == 0) 
-    {
-      return true;
-    }
-
-    return (substr($haystack, -$length) === $needle);
-  }
-
 }
 
 /**
@@ -365,12 +347,14 @@ class FTPS extends FTP
    * Constructor, creates connection to remote FTP server
    * @param string $host Hostname
    * @param string $user Username
+   * @param string $root A ftp ROOT
    * @param string $port Port (Optional)
    * @param string $password Password (Optional)
    * @throws Exception
    */
-  public function __construct($host, $user, $port = NULL, $password = NULL) 
+  public function __construct($host, $user, $root = '/', $port = NULL, $password = NULL) 
   {
+    $this->root = $root;
     $this->connection = @ftp_ssl_connect($host, $port);
     if(!$this->connection)
     {
@@ -390,17 +374,20 @@ class FTPS extends FTP
 class FTP
 {
   public $connection = NULL;
+  public $root;
   
   /**
    * Constructor, creates connection to remote FTP server
    * @param string $host Hostname
    * @param string $user Username
+   * @param string $root A ftp ROOT
    * @param string $port Port (Optional)
    * @param string $password Password (Optional)
    * @throws Exception
    */
-  public function __construct($host, $user, $port = NULL, $password = NULL) 
+  public function __construct($host, $user, $root = '/', $port = NULL, $password = NULL) 
   {
+    $this->root = $root;
     $this->connection = @ftp_connect($host, $port);
     if(!$this->connection)
     {
@@ -509,9 +496,9 @@ class FTP
   public function createPath($filePath, $premisson = NULL)
   {
     $dirs = pathinfo($filePath, PATHINFO_DIRNAME);
-    $dirArray =  explode('/', $dirs);
+    $dirArray =  explode('/', str_replace($this->root, '', $dirs));
     
-    $dirPath = '';
+    $dirPath = $this->root.(Tools::endsWith($this->root, '/') !== FALSE ? '' : '/');
     $status = true;
     foreach($dirArray AS $dir)
     {
@@ -535,7 +522,7 @@ class FTP
     
     if(!$status)
     {
-      throw new Exception(sprintf('Failed to create path on remote server', $dirs));
+      throw new Exception(sprintf('Failed to create path %s on remote server', $dirs));
     }
   }
   
@@ -569,17 +556,20 @@ class SSH
   private $publicKey            = NULL;
   private $privateKey           = NULL;
   private $privateKeyPassphrase = NULL;
+  private $root                 = NULL;
   
   /**
    * Constructor, connect to server and log us in
    * @param string $host Hostname of server
    * @param string $user Username
+   * @param string $root A SSH ROOT (Unused in SSH/SCP)
    * @param string $port Port (Optional)
    * @param string $password Password (Optional)
    * @throws Exception
    */
-  public function __construct($host, $user, $port = NULL, $password = NULL)
+  public function __construct($host, $user, $root = '/', $port = NULL, $password = NULL)
   {
+    $this->root = $root;
     $this->connection = ssh2_connect($host, $port);
     if(!$this->connection)
     {
@@ -778,6 +768,95 @@ class SSH
 }
 
 /**
+ * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
+ * Recommended git server is GitLab http://gitlab.org/
+ * rename as post-receive -> /home/git/gitlab-shell/hooks/post-receive
+ */
+class GitDeployServer
+{
+  /**
+   * Domain where git server is running, fill in only when running with "unknow git server"
+   * @var string 
+   */
+  private $git_host = 'www.gitlab.loc';
+  
+  /**
+   * Path to git repositories, fill in only when running with "unknow git server"
+   * @var string 
+   */
+  private $repository_path = '/home/git/repositories/';
+  
+  /**
+   * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
+   * @var string 
+   */
+  private $git_user = 'git';
+  
+  /**
+   * Specifies name of TMP dir, its created in server repo root
+   * @var string 
+   */
+  private $tmp_dir = 'deploy_tmp';
+  
+  private $self_path;
+  private $ssh_path;
+  private $stdin;
+  private $previous_revision;
+  private $branch;
+  public $current_revision;
+  public $tmp;
+  
+  public function __construct()
+  {
+    //Get data
+    $this->stdin = trim(fgets(STDIN));
+    $this->self_path = getcwd();
+    $this->git_user = get_current_user();
+    
+    //Build needed info
+    $this->ssh_path = $this->git_user.'@'.$this->git_host.':'.str_replace($this->repository_path, '', $this->self_path);
+    
+    //Parse stdin
+    list($prev, $current, $branch) =  explode(' ', $this->stdin);
+    $this->previous_revision = $prev;
+    $this->current_revision = $current;
+    $this->branch = end(explode('/', $branch));
+    
+    //Separate tmp repos per branch
+    $this->tmp_dir = $this->tmp_dir.'/'.$this->branch;
+    
+    $this->tmp = $this->self_path.'/'.$this->tmp_dir;
+    
+    $this->sync();
+    $this->deploy();
+  }
+  
+  private function sync()
+  {
+    if(is_dir($this->tmp_dir))
+    {
+      exec('unset GIT_DIR && cd '.$this->tmp.' && git pull');
+    }
+    else
+    {
+      exec('git clone -b '.$this->branch.' '.$this->ssh_path.' '.$this->tmp); //Create new TMP repo
+    }
+  }
+  
+  private function deploy()
+  {
+    if(class_exists('GitDeploy'))
+    {
+      new GitDeploy($this);
+    }
+    else
+    {
+      throw new Exception('GitDeploy not found!');
+    }
+  }
+}
+
+/**
  * Class used for terminal colorized output :)
  */
 class Color
@@ -845,94 +924,27 @@ class Color
   }
 }
 
-/**
- * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
- * Recommended git server is GitLab http://gitlab.org/
- * rename as post-receive -> /home/git/gitlab-shell/hooks/post-receive
- */
-class GitDeployServer
+class Tools
 {
   /**
-   * Domain where git server is running, fill in only when running with "unknow git server"
-   * @var string 
+   * Helper method checks if string ends with a string :)
+   * @param string $haystack
+   * @param string $needle
+   * @return boolean
    */
-  private $git_host = 'www.gitlab.loc';
-  
-  /**
-   * Path to git repositories, fill in only when running with "unknow git server"
-   * @var string 
-   */
-  private $repository_path = '/home/git/repositories/';
-  
-  /**
-   * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
-   * @var string 
-   */
-  private $git_user = 'git';
-  
-  /**
-   * Specifies name of TMP dir, its created in server repo root
-   * @var string 
-   */
-  private $tmp_dir = 'deploy_tmp';
-  
-  private $self_path;
-  private $ssh_path;
-  private $stdin;
-  private $previous_revision;
-  private $branch;
-  protected $current_revision;
-  protected $tmp;
-  
-  public function __construct()
+  public static function endsWith($haystack, $needle)
   {
-    //Get data
-    $this->stdin = trim(fgets(STDIN));
-    $this->self_path = getcwd();
-    $this->git_user = get_current_user();
-    
-    //Build needed info
-    $this->ssh_path = $this->git_user.'@'.$this->git_host.':'.str_replace($this->repository_path, '', $this->self_path);
-    
-    //Parse stdin
-    list($prev, $current, $branch) =  explode(' ', $this->stdin);
-    $this->previous_revision = $prev;
-    $this->current_revision = $current;
-    $this->branch = end(explode('/', $branch));
-    
-    //Separate tmp repos per branch
-    $this->tmp_dir = $this->tmp_dir.'/'.$this->branch;
-    
-    $this->tmp = $this->self_path.'/'.$this->tmp_dir;
-    
-    $this->sync();
-    $this->deploy();
+    $length = strlen($needle);
+    if ($length == 0) 
+    {
+      return true;
+    }
+
+    return (substr($haystack, -$length) === $needle);
   }
-  
-  private function sync()
-  {
-    if(is_dir($this->tmp_dir))
-    {
-      exec('unset GIT_DIR && cd '.$this->tmp.' && git pull');
-    }
-    else
-    {
-      exec('git clone -b '.$this->branch.' '.$this->ssh_path.' '.$this->tmp); //Create new TMP repo
-    }
-  }
-  
-  private function deploy()
-  {
-    if(class_exists('GitDeploy'))
-    {
-      new GitDeploy($this);
-    }
-    else
-    {
-      throw new Exception('GitDeploy not found!');
-    }
-  }
+
 }
+
 
 //For server side
 new GitDeployServer();
