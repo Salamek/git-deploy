@@ -1,18 +1,42 @@
 #!/usr/bin/php
 <?php
 
+/**
+ * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
+ * Recommended git server is GitLab http://gitlab.org/
+ */
 class GitDeployServer
 {
+  /**
+   * Domain where git server is running, fill in only when running with "unknow git server"
+   * @var string 
+   */
   private $git_host = 'www.gitlab.loc';
+  
+  /**
+   * Path to git repositories, fill in only when running with "unknow git server"
+   * @var string 
+   */
   private $repository_path = '/home/git/repositories/';
-  private $tmp_dir = 'deploy_tmp';
-  private $self_path;
+  
+  /**
+   * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
+   * @var string 
+   */
   private $git_user = 'git';
+  
+  /**
+   * Specifies name of TMP dir, its created in server repo root
+   * @var string 
+   */
+  private $tmp_dir = 'deploy_tmp';
+  
+  private $self_path;
   private $ssh_path;
   private $stdin;
   private $previous_revision;
-  protected $current_revision;
   private $branch;
+  protected $current_revision;
   protected $tmp;
   
   public function __construct()
@@ -54,7 +78,9 @@ class GitDeployServer
 
 //lrwxrwxrwx 1 git git 41 17. dub 16.29 post-receive -> /home/git/gitlab-shell/hooks/post-receive
 
-
+/**
+ * GitDeploy is client side git project deployer (or server side if used with GitDeployServer)
+ */
 class GitDeploy
 {
   private $root        = NULL;
@@ -64,6 +90,10 @@ class GitDeploy
   private $config      = NULL;
   private $revisonFile = 'REVISION';
 
+  /**
+   * Constructor
+   * @param GitDeployServer $config
+   */
   public function __construct($config = NULL) 
   {
     $this->current_revision = NULL;
@@ -102,6 +132,10 @@ class GitDeploy
     }
   }
   
+  /**
+   * Method parses deploy ini config
+   * @throws Exception
+   */
   private function parseConfig()
   {
     if(is_file($this->root.'/'.$this->configFile))
@@ -128,6 +162,9 @@ class GitDeploy
     }
   }
   
+  /**
+   * Method performs deployement
+   */
   private function deploy()
   {
     $connection = NULL;
@@ -207,6 +244,11 @@ class GitDeploy
     }
   }
   
+  /**
+   * Method checks config data for special rights configuration
+   * @param string $filename
+   * @return octdec filerights
+   */
   private function checkPremisson($filename)
   {
     foreach($this->config['file_rights'] AS $k => $v)
@@ -219,6 +261,12 @@ class GitDeploy
     return NULL;
   }
   
+  /**
+   * Helper method checks if string ends with a string :)
+   * @param string $haystack
+   * @param string $needle
+   * @return boolean
+   */
   private function endsWith($haystack, $needle)
   {
     $length = strlen($needle);
@@ -232,14 +280,26 @@ class GitDeploy
 
 }
 
+/**
+ * This class handes work with git repository by executing git commands
+ */
 class Git
 {
   private $root = NULL;
+  
+  /**
+   * Constructor, checks existence of git bin
+   * @throws Exception
+   */
   public function __construct() 
   {
     if(!$this->isGit()) throw new Exception ('Git not found!');
   }
   
+  /**
+   * Method checks if git is installed and runnable
+   * @return boolean
+   */
   public function isGit() 
   {
     $status = exec('git 2> /dev/null');
@@ -250,21 +310,38 @@ class Git
     return false;
   }
 
+  /**
+   * Method sets current repo branch
+   * @param string $branch
+   */
   public function setBranch($branch)
   {
     exec('git checkout '.$branch);
   }
   
+  /**
+   * Method checks if specified directory is git client repo
+   * @param string $dir
+   * @return boolean
+   */
   public function hasGit($dir)
   {
     return is_dir($dir.'/.git');
   }
   
+  /**
+   * Method returns current revision
+   * @return string
+   */
   public function getRevision()
   {
     return trim(exec('git rev-parse HEAD'));
   }
   
+  /**
+   * Method returns list of uncommited files
+   * @return array
+   */
   public function diffUncommitted()
   {
     $data = array();
@@ -273,6 +350,11 @@ class Git
     return $this->gitParseFiles($data);
   }
   
+  /**
+   * Method resturns list of Commited files, in specified revision if any
+   * @param string $revision
+   * @return array
+   */
   public function diffCommited($revision = NULL)
   {
     $files = array();
@@ -292,6 +374,11 @@ class Git
     return $this->gitParseFiles($files);
   }
   
+  /**
+   * Method sets and return git root
+   * @param string $root set absolute fixed git root (usefull when we running deploy form nongit path)
+   * @return string path to repo
+   */
   public function getGitRoot($root = NULL)
   {
     if(!$root)
@@ -305,6 +392,11 @@ class Git
     return $this->root;
   }
 
+  /**
+   * Method parses git filelist output and builds array from it
+   * @param string $data
+   * @return array
+   */
   private function gitParseFiles($data)
   {
     $ignore = array('.gitignore');
@@ -341,8 +433,19 @@ class Git
   }
 }
 
+/**
+ * Class handles work with FTPS
+ */
 class FTPS extends FTP
 {
+  /**
+   * Constructor, creates connection to remote FTP server
+   * @param string $host Hostname
+   * @param string $user Username
+   * @param string $port Port (Optional)
+   * @param string $password Password (Optional)
+   * @throws Exception
+   */
   public function __construct($host, $user, $port = NULL, $password = NULL) 
   {
     $this->connection = @ftp_ssl_connect($host, $port);
@@ -358,9 +461,21 @@ class FTPS extends FTP
   }
 }
 
+/**
+ * Class handles work with FTP
+ */
 class FTP
 {
   public $connection = NULL;
+  
+  /**
+   * Constructor, creates connection to remote FTP server
+   * @param string $host Hostname
+   * @param string $user Username
+   * @param string $port Port (Optional)
+   * @param string $password Password (Optional)
+   * @throws Exception
+   */
   public function __construct($host, $user, $port = NULL, $password = NULL) 
   {
     $this->connection = @ftp_connect($host, $port);
@@ -375,12 +490,19 @@ class FTP
     }
   }
   
+  /**
+   * Destructor, close connection to ftp server
+   */
   public function __destruct() 
   {
     ftp_close($this->connection);
   }
   
-  
+  /**
+   * Method reads file on remote FTP and returns it content (ASCII)
+   * @param string $filePath path on remote server
+   * @return string
+   */
   public function readFile($filePath)
   {
     $tmp = sys_get_temp_dir().'/ftp_file_temp_'.getmypid().'.tmp';
@@ -390,6 +512,12 @@ class FTP
     return $data;
   }
   
+  /**
+   * Method download a file from FTP
+   * @param string $filePath path on remote server
+   * @param string $fileTarget local path to store a file
+   * @throws Exception
+   */
   public function getFile($filePath, $fileTarget)
   {
     $handle = fopen($fileTarget, 'w');
@@ -402,6 +530,13 @@ class FTP
     }
   }
   
+  /**
+   * Method uploads file on remote server
+   * @param string $from local path of file to upload
+   * @param string $to remote path where file will be placed
+   * @param string $premisson set uploaded file premission (Optional)
+   * @throws Exception
+   */
   public function uploadFile($from, $to, $premisson = NULL)
   {
     $this->createPath($to, $premisson);
@@ -415,6 +550,12 @@ class FTP
     $this->setPremission($to, $premisson);
   }
   
+  /**
+   * Method uploads string to remote server
+   * @param string $filePath remote path where file will be placed
+   * @param string $string string to store
+   * @param string $premisson set uploaded file premission (Optional)
+   */
   public function uploadString($filePath, $string, $premisson = NULL)
   {
     $tmp = sys_get_temp_dir().'/ftp_file_temp_'.getmypid().'.tmp';
@@ -423,6 +564,11 @@ class FTP
     unlink($tmp);
   }
   
+  /**
+   * Method delete file on remote server
+   * @param string $file
+   * @throws Exception
+   */
   public function deleteFile($file)
   {
     if(!@ftp_delete($this->connection, $file))
