@@ -3,6 +3,7 @@
 
 /**
  * GitDeploy is client side git project deployer (or server side if used with GitDeployServer)
+ * @author Adam Schubert <adam.schubert@sg1-game.net>
  */
 class GitDeploy
 {
@@ -191,6 +192,7 @@ class GitDeploy
  * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
  * Recommended git server is GitLab http://gitlab.org/
  * rename as post-receive -> /home/git/gitlab-shell/hooks/post-receive
+ * @author Adam Schubert <adam.schubert@sg1-game.net>
  */
 class GitDeployServer
 {
@@ -279,6 +281,7 @@ class GitDeployServer
 
 /**
  * This class handes work with git repository by executing git commands
+ * @author Adam Schubert <adam.schubert@sg1-game.net>
  */
 class Git
 {
@@ -435,6 +438,7 @@ class Git
 
 /**
  * Class handles work with FTPS
+ * @author Adam Schubert <adam.schubert@sg1-game.net>
  */
 class FTPS extends FTP
 {
@@ -467,6 +471,7 @@ class FTPS extends FTP
 
 /**
  * Class handles work with FTP
+ * @author Adam Schubert <adam.schubert@sg1-game.net>
  */
 class FTP
 {
@@ -645,6 +650,7 @@ class FTP
 
 /**
  * Class handles SSH/SCP connection to server
+ * @author Adam Schubert <adam.schubert@sg1-game.net>
  */
 class SSH
 {
@@ -870,6 +876,7 @@ class SSH
 
 /**
  * Class used for terminal colorized output :)
+ * @author Adam Schubert <adam.schubert@sg1-game.net>
  */
 class Color
 {
@@ -938,6 +945,10 @@ class Color
 
 }
 
+/**
+ * Helper tools
+ * @author Adam Schubert <adam.schubert@sg1-game.net>
+ */
 class Tools
 {
 
@@ -960,11 +971,12 @@ class Tools
 
 }
 
-//For server side
+//For server side as post-receive
 new GitDeployServer();
 
 //For client side (Run from repo root)
 //new GitDeploy();
+
 //For client side (Run from *)
 //new GitDeploy('/path/to/git/repository');
 ?>
