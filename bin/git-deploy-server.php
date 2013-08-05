@@ -2,83 +2,6 @@
 <?php
 
 /**
- * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
- * Recommended git server is GitLab http://gitlab.org/
- */
-class GitDeployServer
-{
-  /**
-   * Domain where git server is running, fill in only when running with "unknow git server"
-   * @var string 
-   */
-  private $git_host = 'www.gitlab.loc';
-  
-  /**
-   * Path to git repositories, fill in only when running with "unknow git server"
-   * @var string 
-   */
-  private $repository_path = '/home/git/repositories/';
-  
-  /**
-   * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
-   * @var string 
-   */
-  private $git_user = 'git';
-  
-  /**
-   * Specifies name of TMP dir, its created in server repo root
-   * @var string 
-   */
-  private $tmp_dir = 'deploy_tmp';
-  
-  private $self_path;
-  private $ssh_path;
-  private $stdin;
-  private $previous_revision;
-  private $branch;
-  protected $current_revision;
-  protected $tmp;
-  
-  public function __construct()
-  {
-    //Get data
-    $this->stdin = trim(fgets(STDIN));
-    $this->self_path = getcwd();
-    $this->git_user = get_current_user();
-    
-    //Build needed info
-    $this->ssh_path = $this->git_user.'@'.$this->git_host.':'.str_replace($this->repository_path, '', $this->self_path);
-    
-    //Parse stdin
-    list($prev, $current, $branch) =  explode(' ', $this->stdin);
-    $this->previous_revision = $prev;
-    $this->current_revision = $current;
-    $this->branch = end(explode('/', $branch));
-    
-    //Separate tmp repos per branch
-    $this->tmp_dir = $this->tmp_dir.'/'.$this->branch;
-    
-    $this->tmp = $this->self_path.'/'.$this->tmp_dir;
-    
-    $this->sync();
-  }
-  
-  private function sync()
-  {
-    if(is_dir($this->tmp_dir))
-    {
-      exec('unset GIT_DIR && cd '.$this->tmp.' && git pull');
-    }
-    else
-    {
-      exec('git clone -b '.$this->branch.' '.$this->ssh_path.' '.$this->tmp); //Create new TMP repo
-    }
-  }
-}
-
-//lrwxrwxrwx 1 git git 41 17. dub 16.29 post-receive -> /home/git/gitlab-shell/hooks/post-receive
-
-/**
  * GitDeploy is client side git project deployer (or server side if used with GitDeployServer)
  */
 class GitDeploy
@@ -577,9 +500,15 @@ class FTP
     }
   }
   
+  /**
+   * Method creates dirpath
+   * @param string $filePath path to file/dir to create
+   * @param string $premisson premission for dirs
+   * @throws Exception
+   */
   public function createPath($filePath, $premisson = NULL)
   {
-    $dirs = pathinfo($filePath,PATHINFO_DIRNAME);
+    $dirs = pathinfo($filePath, PATHINFO_DIRNAME);
     $dirArray =  explode('/', $dirs);
     
     $dirPath = '';
@@ -610,6 +539,12 @@ class FTP
     }
   }
   
+  /**
+   * Method sets premission to file/dir
+   * @param string $filePath path to file/dir
+   * @param string $premisson
+   * @throws Exception
+   */
   private function setPremission($filePath, $premisson)
   {
     if($premisson)
@@ -622,6 +557,9 @@ class FTP
   }
 }
 
+/**
+ * Class handles SSH/SCP connection to server
+ */
 class SSH
 {
   private $connection           = NULL;
@@ -632,6 +570,14 @@ class SSH
   private $privateKey           = NULL;
   private $privateKeyPassphrase = NULL;
   
+  /**
+   * Constructor, connect to server and log us in
+   * @param string $host Hostname of server
+   * @param string $user Username
+   * @param string $port Port (Optional)
+   * @param string $password Password (Optional)
+   * @throws Exception
+   */
   public function __construct($host, $user, $port = NULL, $password = NULL)
   {
     $this->connection = ssh2_connect($host, $port);
@@ -685,6 +631,10 @@ class SSH
     $this->sftpConnection = ssh2_sftp($this->connection);
   }
   
+  /**
+   * Method find private/public keys for ssh auth
+   * @return array
+   */
   private function findKeys()
   {
     $fingerprintsNames = array('known_hosts');
@@ -744,7 +694,11 @@ class SSH
     return $return;
   }
   
-  
+  /**
+   * Method reads file from remote server
+   * @param string $filePath path to file on remote server
+   * @return string file content
+   */
   public function readFile($filePath)
   {
     $tmp = sys_get_temp_dir().'/ssh_file_temp_'.getmypid().'.tmp';
@@ -754,6 +708,12 @@ class SSH
     return $data;
   }
   
+  /**
+   * Method downloads file from remote server
+   * @param string $filePath
+   * @param string $fileTarget
+   * @throws Exception
+   */
   public function getFile($filePath, $fileTarget)
   {
     if(!@ssh2_scp_recv($this->connection, $filePath, $fileTarget))
@@ -762,6 +722,13 @@ class SSH
     }
   }
   
+  /**
+   * Uploads file on remote server
+   * @param string $from
+   * @param string $to
+   * @param string $premisson
+   * @throws Exception
+   */
   public function uploadFile($from, $to, $premisson = 0755)
   {
     $this->createPath($to, $premisson);
@@ -771,6 +738,12 @@ class SSH
     }
   }
   
+  /**
+   * Uploads string on remote server
+   * @param string $filePath
+   * @param string $string
+   * @param string $premisson
+   */
   public function uploadString($filePath, $string, $premisson = 0755)
   {
     $tmp = sys_get_temp_dir().'/ssh_file_temp_'.getmypid().'.tmp';
@@ -779,6 +752,11 @@ class SSH
     unlink($tmp);
   }
   
+  /**
+   * Deletes file on remote server
+   * @param type $file
+   * @throws Exception
+   */
   public function deleteFile($file)
   {
     if(!ssh2_sftp_unlink($this->sftpConnection, $file))
@@ -787,6 +765,11 @@ class SSH
     }
   }
   
+  /**
+   * Creates path on remote server
+   * @param type $filePath
+   * @param type $premisson
+   */
   public function createPath($filePath, $premisson = 0755)
   {
     $dirs = pathinfo($filePath,PATHINFO_DIRNAME);
@@ -794,12 +777,17 @@ class SSH
   }
 }
 
+/**
+ * Class used for terminal colorized output :)
+ */
 class Color
 {
   public static $foreground_colors = array();
   public static $background_colors = array();
 
-
+  /**
+   * Initialize our color pallete
+   */
   public static function init() 
   {
     self::$foreground_colors['black']         = '0;30';
@@ -829,6 +817,13 @@ class Color
     self::$background_colors['light_gray']    = '47';
   }
 
+  /**
+   * method colorize string
+   * @param string $string String to colorize
+   * @param string $foreground_color color of text
+   * @param string $background_color color of background
+   * @return string
+   */
   public static function string($string, $foreground_color = NULL, $background_color = NULL) 
   {
     self::init();
@@ -850,9 +845,97 @@ class Color
   }
 }
 
+/**
+ * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
+ * Recommended git server is GitLab http://gitlab.org/
+ * rename as post-receive -> /home/git/gitlab-shell/hooks/post-receive
+ */
+class GitDeployServer
+{
+  /**
+   * Domain where git server is running, fill in only when running with "unknow git server"
+   * @var string 
+   */
+  private $git_host = 'www.gitlab.loc';
+  
+  /**
+   * Path to git repositories, fill in only when running with "unknow git server"
+   * @var string 
+   */
+  private $repository_path = '/home/git/repositories/';
+  
+  /**
+   * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
+   * @var string 
+   */
+  private $git_user = 'git';
+  
+  /**
+   * Specifies name of TMP dir, its created in server repo root
+   * @var string 
+   */
+  private $tmp_dir = 'deploy_tmp';
+  
+  private $self_path;
+  private $ssh_path;
+  private $stdin;
+  private $previous_revision;
+  private $branch;
+  protected $current_revision;
+  protected $tmp;
+  
+  public function __construct()
+  {
+    //Get data
+    $this->stdin = trim(fgets(STDIN));
+    $this->self_path = getcwd();
+    $this->git_user = get_current_user();
+    
+    //Build needed info
+    $this->ssh_path = $this->git_user.'@'.$this->git_host.':'.str_replace($this->repository_path, '', $this->self_path);
+    
+    //Parse stdin
+    list($prev, $current, $branch) =  explode(' ', $this->stdin);
+    $this->previous_revision = $prev;
+    $this->current_revision = $current;
+    $this->branch = end(explode('/', $branch));
+    
+    //Separate tmp repos per branch
+    $this->tmp_dir = $this->tmp_dir.'/'.$this->branch;
+    
+    $this->tmp = $this->self_path.'/'.$this->tmp_dir;
+    
+    $this->sync();
+    $this->deploy();
+  }
+  
+  private function sync()
+  {
+    if(is_dir($this->tmp_dir))
+    {
+      exec('unset GIT_DIR && cd '.$this->tmp.' && git pull');
+    }
+    else
+    {
+      exec('git clone -b '.$this->branch.' '.$this->ssh_path.' '.$this->tmp); //Create new TMP repo
+    }
+  }
+  
+  private function deploy()
+  {
+    if(class_exists('GitDeploy'))
+    {
+      new GitDeploy($this);
+    }
+    else
+    {
+      throw new Exception('GitDeploy not found!');
+    }
+  }
+}
+
 //For server side
-$server = new GitDeployServer();
-new GitDeploy($server);
+new GitDeployServer();
 
 //For client side (Run from repo root)
 //new GitDeploy();
