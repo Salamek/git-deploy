@@ -11,8 +11,9 @@ class GitDeployServer
   private $ssh_path;
   private $stdin;
   private $previous_revision;
-  private $current_revision;
+  protected $current_revision;
   private $branch;
+  protected $tmp;
   
   public function __construct()
   {
@@ -33,6 +34,8 @@ class GitDeployServer
     //Separate tmp repos per branch
     $this->tmp_dir = $this->tmp_dir.'/'.$this->branch;
     
+    $this->tmp = $this->self_path.'/'.$this->tmp_dir;
+    
     $this->sync();
   }
   
@@ -40,11 +43,11 @@ class GitDeployServer
   {
     if(is_dir($this->tmp_dir))
     {
-      exec('unset GIT_DIR && cd '.$this->self_path.'/'.$this->tmp_dir.' && git pull');
+      exec('unset GIT_DIR && cd '.$this->tmp.' && git pull');
     }
     else
     {
-      exec('git clone -b '.$this->branch.' '.$this->ssh_path.' '.$this->self_path.'/'.$this->tmp_dir); //Create new TMP repo
+      exec('git clone -b '.$this->branch.' '.$this->ssh_path.' '.$this->tmp); //Create new TMP repo
     }
   }
 }
@@ -61,9 +64,21 @@ class GitDeploy
   private $config      = NULL;
   private $revisonFile = 'REVISION';
 
-  public function __construct($root = NULL, $revision = NULL) 
+  public function __construct($config = NULL) 
   {
-    $this->current_revision = $revision;
+    $this->current_revision = NULL;
+    $root = NULL;
+    
+    if($config instanceof GitDeployServer)
+    {
+      $this->current_revision = $config->current_revision;
+      $root = $config->tmp;
+    }
+    elseif (is_string($config))
+    {
+      $root = $config;
+    }
+    
     try
     {
       $this->git = new Git();
@@ -131,7 +146,7 @@ class GitDeploy
         break;
     }
     
-    $revision = NULL;
+    
     $gitRevision = NULL;
     $gitRevisionLog = NULL;
     try
@@ -150,6 +165,7 @@ class GitDeploy
     {
       //here i assume no version file on remote, so invalide version check
       $gitRevision = FALSE;
+      $revision = NULL;
     }
     
     //Revision not match, we must get changes and upload it on server
@@ -688,8 +704,15 @@ class Color
   }
 }
 
+//For server side
+$server = new GitDeployServer();
+new GitDeploy($server);
 
-new GitDeploy($self_path.'/'.$tmp_dir, $current);
+//For client side (Run from repo root)
+//new GitDeploy();
+
+//For client side (Run from *)
+//new GitDeploy('/path/to/git/repository');
 
 
 
