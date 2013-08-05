@@ -148,9 +148,12 @@ class GitDeploy
 
       foreach ($files['upload'] AS $upload)
       {
-        $premisson = $this->checkPremisson($upload);
-        $connection->uploadFile($this->root . '/' . $upload, $this->config['uri']['path'] . '/' . $upload, $premisson);
-        echo Color::string('++ Deploying file ' . $this->root . '/' . $upload . ' --> ' . $this->config['uri']['path'] . '/' . $upload, 'green', 'black');
+        if(!Tools::endsWith($upload, $this->configFile))
+        {
+          $premisson = $this->checkPremisson($upload);
+          $connection->uploadFile($this->root.'/'.$upload, $this->config['uri']['path'].'/'.$upload, $premisson);
+          echo Color::string('++ Deploying file '.$this->root.'/'.$upload.' --> '.$this->config['uri']['path'].'/'.$upload, 'green', 'black');
+        }
       }
 
       foreach ($files['delete'] AS $delete)
