@@ -1,16 +1,69 @@
 #!/usr/bin/php
 <?php
 
+class GitDeployServer
+{
+  private $git_host = 'www.gitlab.loc';
+  private $repository_path = '/home/git/repositories/';
+  private $tmp_dir = 'deploy_tmp';
+  private $self_path;
+  private $git_user = 'git';
+  private $ssh_path;
+  private $stdin;
+  private $previous_revision;
+  private $current_revision;
+  private $branch;
+  
+  public function __construct()
+  {
+    //Get data
+    $this->stdin = trim(fgets(STDIN));
+    $this->self_path = getcwd();
+    $this->git_user = get_current_user();
+    
+    //Build needed info
+    $this->ssh_path = $this->git_user.'@'.$this->git_host.':'.str_replace($this->repository_path, '', $this->self_path);
+    
+    //Parse stdin
+    list($prev, $current, $branch) =  explode(' ', $this->stdin);
+    $this->previous_revision = $prev;
+    $this->current_revision = $current;
+    $this->branch = end(explode('/', $branch));
+    
+    //Separate tmp repos per branch
+    $this->tmp_dir = $this->tmp_dir.'/'.$this->branch;
+    
+    $this->sync();
+  }
+  
+  private function sync()
+  {
+    if(is_dir($this->tmp_dir))
+    {
+      exec('unset GIT_DIR && cd '.$this->self_path.'/'.$this->tmp_dir.' && git pull');
+    }
+    else
+    {
+      exec('git clone -b '.$this->branch.' '.$this->ssh_path.' '.$this->self_path.'/'.$this->tmp_dir); //Create new TMP repo
+    }
+  }
+}
+
+//lrwxrwxrwx 1 git git 41 17. dub 16.29 post-receive -> /home/git/gitlab-shell/hooks/post-receive
+
+
 class GitDeploy
 {
   private $root        = NULL;
+  private $current_revision = NULL;
   private $git         = NULL;
   private $configFile  = 'deploy.ini';
   private $config      = NULL;
   private $revisonFile = 'REVISION';
 
-  public function __construct($root = NULL) 
+  public function __construct($root = NULL, $revision = NULL) 
   {
+    $this->current_revision = $revision;
     try
     {
       $this->git = new Git();
@@ -83,7 +136,14 @@ class GitDeploy
     $gitRevisionLog = NULL;
     try
     {
-      $gitRevisionLog = $gitRevision = trim($this->git->getRevision());
+      if($this->current_revision)
+      {
+        $gitRevisionLog = $gitRevision = $this->current_revision;
+      }
+      else
+      {
+        $gitRevisionLog = $gitRevision = trim($this->git->getRevision());
+      }
       $revision =  trim($connection->readFile($this->config['uri']['path'].'/'.$this->revisonFile));
     }
     catch(Exception $e)
@@ -172,6 +232,11 @@ class Git
       return true;
     }
     return false;
+  }
+
+  public function setBranch($branch)
+  {
+    exec('git checkout '.$branch);
   }
   
   public function hasGit($dir)
@@ -620,12 +685,12 @@ class Color
     $colored_string .=  $string . "\033[0m";
 
     return $colored_string.PHP_EOL;
-	}
+  }
 }
 
 
-$git = new GitDeploy('/home/sadam/git/git-deploy');
-//print_r($git->diffUncommitted());
+new GitDeploy($self_path.'/'.$tmp_dir, $current);
+
 
 
 ?>
