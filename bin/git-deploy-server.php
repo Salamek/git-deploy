@@ -293,20 +293,23 @@ class GitDeployServer
    */
   private function checkWork()
   {
-    if (is_dir($this->tmp . '/' . $this->lockFile))
+    //Info is cached, we must clear cache before check!
+    clearstatcache(true, $this->tmp . '/' . $this->lockFile);
+    if (is_file($this->tmp . '/' . $this->lockFile))
     {
       //Lock file is less then one hour old... let it be and wait till expire or get removed by finished job
       if ((filectime($this->tmp . '/' . $this->lockFile) + 3600) > time())
       {
         return true;
       }
-      else//Its old, just recreate it and continue
-      {
-        file_put_contents($this->tmp . '/' . $this->lockFile, $this->currentRevision);
-      }
     }
+
+    //Create own lock file and continue
+    file_put_contents($this->tmp . '/' . $this->lockFile, $this->currentRevision);
+
     return false;
   }
+
 
   /**
    * Method sync local TMP with main repo
