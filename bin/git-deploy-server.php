@@ -9,7 +9,7 @@ class GitDeploy
 {
 
   private $root = NULL;
-  private $current_revision = NULL;
+  private $currentRevision = NULL;
   private $git = NULL;
   private $configFile = 'deploy.ini';
   private $config = NULL;
@@ -22,12 +22,12 @@ class GitDeploy
    */
   public function __construct($config = NULL)
   {
-    $this->current_revision = NULL;
+    $this->currentRevision = NULL;
     $root = NULL;
 
     if ($config instanceof GitDeployServer)
     {
-      $this->current_revision = $config->current_revision;
+      $this->currentRevision = $config->currentRevision;
       $root = $config->tmp;
       $this->lockFile = $config->lockFile;
     }
@@ -115,9 +115,9 @@ class GitDeploy
     $gitRevisionLog = NULL;
     try
     {
-      if ($this->current_revision)
+      if ($this->currentRevision)
       {
-        $gitRevisionLog = $gitRevision = $this->current_revision;
+        $gitRevisionLog = $gitRevision = $this->currentRevision;
       }
       else
       {
@@ -211,32 +211,32 @@ class GitDeployServer
    * Domain where git server is running, fill in only when running with "unknow git server"
    * @var string 
    */
-  private $git_host = 'www.gitlab.loc';
+  private $gitHost = 'www.gitlab.loc';
 
   /**
    * Path to git repositories, fill in only when running with "unknow git server"
    * @var string 
    */
-  private $repository_path;
+  private $repositoryPath;
 
   /**
    * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
    * @var string 
    */
-  private $git_user = 'git';
+  private $gitUser = 'git';
 
   /**
    * Specifies name of TMP dir, its created in server repo root
    * @var string 
    */
-  private $tmp_dir = 'deploy_tmp';
-  private $self_path;
-  private $ssh_path;
+  private $tmpDir = 'deploy_tmp';
+  private $selfPath;
+  private $sshPath;
   private $stdin;
-  private $previous_revision;
+  private $previousRevision;
   private $branch;
   public $lockFile = 'deploy.lck';
-  public $current_revision;
+  public $currentRevision;
   public $tmp;
 
   public function __construct()
@@ -244,23 +244,23 @@ class GitDeployServer
     //Get data
     //$this->findConfig();
     $this->stdin = trim(fgets(STDIN));
-    $this->self_path = getcwd();
-    $this->git_user = get_current_user();
-    $this->repository_path = '/home/' . $this->git_user . '/repositories/';
+    $this->selfPath = getcwd();
+    $this->gitUser = get_current_user();
+    $this->repositoryPath = '/home/' . $this->gitUser . '/repositories/';
 
     //Build needed info
-    $this->ssh_path = $this->git_user . '@' . $this->git_host . ':' . str_replace($this->repository_path, '', $this->self_path);
+    $this->sshPath = $this->gitUser . '@' . $this->gitHost . ':' . str_replace($this->repositoryPath, '', $this->selfPath);
 
     //Parse stdin
     list($prev, $current, $branch) = explode(' ', $this->stdin);
-    $this->previous_revision = $prev;
-    $this->current_revision = $current;
+    $this->previousRevision = $prev;
+    $this->currentRevision = $current;
     $this->branch = end(explode('/', $branch));
 
     //Separate tmp repos per branch
-    $this->tmp_dir = $this->tmp_dir . '/' . $this->branch;
+    $this->tmpDir = $this->tmpDir . '/' . $this->branch;
 
-    $this->tmp = $this->self_path . '/' . $this->tmp_dir;
+    $this->tmp = $this->selfPath . '/' . $this->tmpDir;
 
     try
     {
@@ -302,7 +302,7 @@ class GitDeployServer
       }
       else//Its old, just recreate it and continue
       {
-        file_put_contents($this->tmp . '/' . $this->lockFile, $this->current_revision);
+        file_put_contents($this->tmp . '/' . $this->lockFile, $this->currentRevision);
       }
     }
     return false;
@@ -319,7 +319,7 @@ class GitDeployServer
     }
     else
     {
-      exec('git clone -b ' . $this->branch . ' ' . $this->ssh_path . ' ' . $this->tmp); //Create new TMP repo
+      exec('git clone -b ' . $this->branch . ' ' . $this->sshPath . ' ' . $this->tmp); //Create new TMP repo
     }
   }
 
