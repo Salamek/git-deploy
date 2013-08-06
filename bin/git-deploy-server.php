@@ -279,9 +279,11 @@ class GitDeployServer
    */
   private function runningJob()
   {
+    $waitTime = 10;//s
     while ($this->checkWork())
     {
-      sleep(10);
+      echo Color::string(sprintf('Another deploy job is running, waiting %d s to try again...', $waitTime), 'yellow', 'black');
+      sleep($waitTime);
     }
   }
 
