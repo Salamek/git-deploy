@@ -154,7 +154,7 @@ class GitDeploy
         {
           $premisson = $this->checkPremisson($upload);
           $connection->uploadFile($this->root . '/' . $upload, $this->config['uri']['path'] . '/' . $upload, $premisson);
-          echo Color::string('++ Deploying file ' . $this->root . '/' . $upload . ' --> ' . $this->config['uri']['path'] . '/' . $upload, 'green', 'black');
+          echo Color::string('++ Deploying file ' . $this->config['uri']['path'] . '/' . $upload, 'green', 'black');
         }
       }
 
