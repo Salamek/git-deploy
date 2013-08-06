@@ -210,7 +210,7 @@ class GitDeployServer
    * Path to git repositories, fill in only when running with "unknow git server"
    * @var string 
    */
-  private $repository_path = '/home/git/repositories/';
+  private $repository_path;
 
   /**
    * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
@@ -234,9 +234,12 @@ class GitDeployServer
   public function __construct()
   {
     //Get data
+    
+    $this->findConfig();
     $this->stdin = trim(fgets(STDIN));
     $this->self_path = getcwd();
     $this->git_user = get_current_user();
+    $this->repository_path = '/home/'.$this->git_user.'/repositories/';
 
     //Build needed info
     $this->ssh_path = $this->git_user . '@' . $this->git_host . ':' . str_replace($this->repository_path, '', $this->self_path);
@@ -252,10 +255,20 @@ class GitDeployServer
 
     $this->tmp = $this->self_path . '/' . $this->tmp_dir;
 
-    $this->sync();
-    $this->deploy();
+    try 
+    {
+      $this->sync();
+      $this->deploy();
+    }
+    catch(Exception $e)
+    {
+      echo Color::string($e->getMessage(), 'white', 'red');
+    }
   }
 
+  /**
+   * Method sync local TMP with main repo
+   */
   private function sync()
   {
     if (is_dir($this->tmp))
@@ -268,6 +281,10 @@ class GitDeployServer
     }
   }
 
+  /**
+   * Method calls local deployer
+   * @throws Exception
+   */
   private function deploy()
   {
     if (class_exists('GitDeploy'))
@@ -280,6 +297,34 @@ class GitDeployServer
     }
   }
 
+  private function findConfig()
+  {
+    //Currently supports only gitlab
+    $srvs = array('gitlab');
+
+    foreach($srvs AS $srv)
+    {
+      if(is_dir($_SERVER['HOME'].'/'.$srv))
+      {
+        break;
+      }
+    }
+    
+    switch($srv)
+    {
+      case 'gitlab':
+        if(function_exists('yaml_parse_file'))
+        {
+          print_r(yaml_parse_file($_SERVER['HOME'].'/gitlab/config/gitlab.yml'));
+        }
+        else
+        {
+          echo Color::string('I found gitlab, but i can\'t parse config file because function yaml_parse_file is missing!', 'white', 'red');
+        }
+      break;
+    }
+
+  }
 }
 
 /**
