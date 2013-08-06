@@ -14,6 +14,7 @@ class GitDeploy
   private $configFile = 'deploy.ini';
   private $config = NULL;
   private $revisonFile = 'REVISION';
+  private $lockFile = NULL;
 
   /**
    * Constructor
@@ -28,6 +29,7 @@ class GitDeploy
     {
       $this->current_revision = $config->current_revision;
       $root = $config->tmp;
+      $this->lockFile = $config->lockFile;
     }
     elseif (is_string($config))
     {
@@ -148,11 +150,11 @@ class GitDeploy
 
       foreach ($files['upload'] AS $upload)
       {
-        if(!Tools::endsWith($upload, $this->configFile))
+        if (!Tools::endsWith($upload, $this->configFile))
         {
           $premisson = $this->checkPremisson($upload);
-          $connection->uploadFile($this->root.'/'.$upload, $this->config['uri']['path'].'/'.$upload, $premisson);
-          echo Color::string('++ Deploying file '.$this->root.'/'.$upload.' --> '.$this->config['uri']['path'].'/'.$upload, 'green', 'black');
+          $connection->uploadFile($this->root . '/' . $upload, $this->config['uri']['path'] . '/' . $upload, $premisson);
+          echo Color::string('++ Deploying file ' . $this->root . '/' . $upload . ' --> ' . $this->config['uri']['path'] . '/' . $upload, 'green', 'black');
         }
       }
 
@@ -164,6 +166,11 @@ class GitDeploy
 
       $connection->uploadString($this->config['uri']['path'] . '/' . $this->revisonFile, $gitRevisionLog);
 
+      //Remove lock file if we run on server and if exists
+      if ($this->lockFile && is_file($this->root . '/' . $this->lockFile))
+      {
+        unlink($this->root . '/' . $this->lockFile);
+      }
       echo Color::string('Deploying done!', 'white', 'green');
     }
     else
@@ -228,18 +235,18 @@ class GitDeployServer
   private $stdin;
   private $previous_revision;
   private $branch;
+  public $lockFile = 'deploy.lck';
   public $current_revision;
   public $tmp;
 
   public function __construct()
   {
     //Get data
-    
-    $this->findConfig();
+    //$this->findConfig();
     $this->stdin = trim(fgets(STDIN));
     $this->self_path = getcwd();
     $this->git_user = get_current_user();
-    $this->repository_path = '/home/'.$this->git_user.'/repositories/';
+    $this->repository_path = '/home/' . $this->git_user . '/repositories/';
 
     //Build needed info
     $this->ssh_path = $this->git_user . '@' . $this->git_host . ':' . str_replace($this->repository_path, '', $this->self_path);
@@ -255,15 +262,48 @@ class GitDeployServer
 
     $this->tmp = $this->self_path . '/' . $this->tmp_dir;
 
-    try 
+    try
     {
+      $this->runningJob();
       $this->sync();
       $this->deploy();
     }
-    catch(Exception $e)
+    catch (Exception $e)
     {
       echo Color::string($e->getMessage(), 'white', 'red');
     }
+  }
+
+  /**
+   * Method checks if there is running job for branch, if is it will sleep till another job ends
+   */
+  private function runningJob()
+  {
+    while ($this->checkWork())
+    {
+      sleep(10);
+    }
+  }
+
+  /**
+   * Method checks if there is unfinished job
+   * @return boolean
+   */
+  private function checkWork()
+  {
+    if (is_dir($this->tmp . '/' . $this->lockFile))
+    {
+      //Lock file is less then one hour old... let it be and wait till expire or get removed by finished job
+      if ((filectime($this->tmp . '/' . $this->lockFile) + 3600) > time())
+      {
+        return true;
+      }
+      else//Its old, just recreate it and continue
+      {
+        file_put_contents($this->tmp . '/' . $this->lockFile, $this->current_revision);
+      }
+    }
+    return false;
   }
 
   /**
@@ -302,29 +342,29 @@ class GitDeployServer
     //Currently supports only gitlab
     $srvs = array('gitlab');
 
-    foreach($srvs AS $srv)
+    foreach ($srvs AS $srv)
     {
-      if(is_dir($_SERVER['HOME'].'/'.$srv))
+      if (is_dir($_SERVER['HOME'] . '/' . $srv))
       {
         break;
       }
     }
-    
-    switch($srv)
+
+    switch ($srv)
     {
       case 'gitlab':
-        if(function_exists('yaml_parse_file'))
+        if (function_exists('yaml_parse_file'))
         {
-          print_r(yaml_parse_file($_SERVER['HOME'].'/gitlab/config/gitlab.yml'));
+          print_r(yaml_parse_file($_SERVER['HOME'] . '/gitlab/config/gitlab.yml'));
         }
         else
         {
           echo Color::string('I found gitlab, but i can\'t parse config file because function yaml_parse_file is missing!', 'white', 'red');
         }
-      break;
+        break;
     }
-
   }
+
 }
 
 /**
@@ -1024,7 +1064,6 @@ new GitDeployServer();
 
 //For client side (Run from repo root)
 //new GitDeploy();
-
 //For client side (Run from *)
 //new GitDeploy('/path/to/git/repository');
 ?>
