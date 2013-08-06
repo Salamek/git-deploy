@@ -14,7 +14,6 @@ class GitDeploy
   private $configFile = 'deploy.ini';
   private $config = NULL;
   private $revisonFile = 'REVISION';
-  private $lockFile = NULL;
 
   /**
    * Constructor
@@ -29,7 +28,6 @@ class GitDeploy
     {
       $this->currentRevision = $config->currentRevision;
       $root = $config->tmp;
-      $this->lockFile = $config->lockFile;
     }
     elseif (is_string($config))
     {
@@ -166,11 +164,6 @@ class GitDeploy
 
       $connection->uploadString($this->config['uri']['path'] . '/' . $this->revisonFile, $gitRevisionLog);
 
-      //Remove lock file if we run on server and if exists
-      if ($this->lockFile && is_file($this->root . '/' . $this->lockFile))
-      {
-        unlink($this->root . '/' . $this->lockFile);
-      }
       echo Color::string('Deploying done!', 'white', 'green');
     }
     else
@@ -235,7 +228,7 @@ class GitDeployServer
   private $stdin;
   private $previousRevision;
   private $branch;
-  public $lockFile = 'deploy.lck';
+  private $lockFile = 'deploy.lck';
   public $currentRevision;
   public $tmp;
 
@@ -338,6 +331,7 @@ class GitDeployServer
     {
       throw new Exception('GitDeploy not found!');
     }
+    $this->destroyLock();
   }
 
   private function findConfig()
@@ -368,6 +362,18 @@ class GitDeployServer
     }
   }
 
+  private function destroyLock()
+  {
+    if ($this->lockFile && is_file($this->tmp . '/' . $this->lockFile))
+    {
+      unlink($this->tmp . '/' . $this->lockFile);
+    }
+  }
+
+  public function __destruct()
+  {
+    $this->destroyLock();
+  }
 }
 
 /**
