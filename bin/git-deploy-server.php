@@ -314,7 +314,7 @@ class GitDeployServer
       exec('git clone -b ' . $this->branch . ' ' . $this->sshPath . ' ' . $this->tmp); //Create new TMP repo
     }
     //Create own lock file and continue
-    file_put_contents($this->tmp . '/' . $this->lockFile, $this->currentRevision);
+    @file_put_contents($this->tmp . '/' . $this->lockFile, $this->currentRevision);
   }
 
   /**
