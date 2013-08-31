@@ -7,7 +7,8 @@ if(is_file('git-deploy'))
 }
 else
 {
-  echo Color::string('git-deploy not found in server hook dir!', 'white', 'red');
+  echo 'Git-deploy not found in server hook dir!';
+  exit();
 }
 
 /**
