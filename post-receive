@@ -1,0 +1,199 @@
+#!/usr/bin/php
+<?php
+
+if(is_file('git-deploy'))
+{
+  require_once('git-deploy');
+}
+else
+{
+  echo Color::string('git-deploy not found in server hook dir!', 'white', 'red');
+}
+
+/**
+ * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
+ * Recommended git server is GitLab http://gitlab.org/
+ * rename as post-receive -> /home/git/gitlab-shell/hooks/post-receive
+ * @author Adam Schubert <adam.schubert@sg1-game.net>
+ */
+class GitDeployServer
+{
+
+  /**
+   * Domain where git server is running, fill in only when running with "unknow git server"
+   * @var string 
+   */
+  private $gitHost = 'www.gitlab.loc';
+
+  /**
+   * Path to git repositories, fill in only when running with "unknow git server"
+   * @var string 
+   */
+  private $repositoryPath;
+
+  /**
+   * User under with git is running, default is git, fill in only when running with "unknow git server" or under nonstandard user
+   * @var string 
+   */
+  private $gitUser = 'git';
+
+  /**
+   * Specifies name of TMP dir, its created in server repo root
+   * @var string 
+   */
+  private $tmpDir = 'deploy_tmp';
+  private $selfPath;
+  private $sshPath;
+  private $stdin;
+  private $previousRevision;
+  private $branch;
+  private $lockFile = 'deploy.lck';
+  public $currentRevision;
+  public $tmp;
+
+  public function __construct()
+  {
+    //Get data
+    //$this->findConfig();
+    $this->stdin = trim(fgets(STDIN));
+    $this->selfPath = getcwd();
+    $this->gitUser = get_current_user();
+    $this->repositoryPath = '/home/' . $this->gitUser . '/repositories/';
+
+    //Build needed info
+    $this->sshPath = $this->gitUser . '@' . $this->gitHost . ':' . str_replace($this->repositoryPath, '', $this->selfPath);
+
+    //Parse stdin
+    list($prev, $current, $branch) = explode(' ', $this->stdin);
+    $this->previousRevision = $prev;
+    $this->currentRevision = $current;
+    $this->branch = end(explode('/', $branch));
+
+    //Separate tmp repos per branch
+    $this->tmpDir = $this->tmpDir . '/' . $this->branch;
+
+    $this->tmp = $this->selfPath . '/' . $this->tmpDir;
+
+    try
+    {
+      $this->runningJob();
+      $this->sync();
+      $this->deploy();
+    }
+    catch (Exception $e)
+    {
+      echo Color::string($e->getMessage(), 'white', 'red');
+    }
+  }
+
+  /**
+   * Method checks if there is running job for branch, if is it will sleep till another job ends
+   */
+  private function runningJob()
+  {
+    $waitTime = 10;//s
+    while ($this->checkWork())
+    {
+      echo Color::string(sprintf('Another deploy job is running, waiting %d s to try again...', $waitTime), 'yellow', 'black');
+      sleep($waitTime);
+    }
+  }
+
+  /**
+   * Method checks if there is unfinished job
+   * @return boolean
+   */
+  private function checkWork()
+  {
+    //Info is cached, we must clear cache before check!
+    clearstatcache(true, $this->tmp . '/' . $this->lockFile);
+    if (is_file($this->tmp . '/' . $this->lockFile))
+    {
+      //Lock file is less then one hour old... let it be and wait till expire or get removed by finished job
+      if ((filectime($this->tmp . '/' . $this->lockFile) + 3600) > time())
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  /**
+   * Method sync local TMP with main repo
+   */
+  private function sync()
+  {
+    if (is_dir($this->tmp))
+    {
+      exec('unset GIT_DIR && cd ' . $this->tmp . ' && git pull');
+    }
+    else
+    {
+      exec('git clone -b ' . $this->branch . ' ' . $this->sshPath . ' ' . $this->tmp); //Create new TMP repo
+    }
+    //Create own lock file and continue
+    @file_put_contents($this->tmp . '/' . $this->lockFile, $this->currentRevision);
+  }
+
+  /**
+   * Method calls local deployer
+   * @throws Exception
+   */
+  private function deploy()
+  {
+    if (class_exists('GitDeploy'))
+    {
+      new GitDeploy($this);
+    }
+    else
+    {
+      throw new Exception('GitDeploy not found!');
+    }
+    $this->destroyLock();
+  }
+
+  private function findConfig()
+  {
+    //Currently supports only gitlab
+    $srvs = array('gitlab');
+
+    foreach ($srvs AS $srv)
+    {
+      if (is_dir($_SERVER['HOME'] . '/' . $srv))
+      {
+        break;
+      }
+    }
+
+    switch ($srv)
+    {
+      case 'gitlab':
+        if (function_exists('yaml_parse_file'))
+        {
+          print_r(yaml_parse_file($_SERVER['HOME'] . '/gitlab/config/gitlab.yml'));
+        }
+        else
+        {
+          echo Color::string('I found gitlab, but i can\'t parse config file because function yaml_parse_file is missing!', 'white', 'red');
+        }
+        break;
+    }
+  }
+
+  private function destroyLock()
+  {
+    if ($this->lockFile && is_file($this->tmp . '/' . $this->lockFile))
+    {
+      unlink($this->tmp . '/' . $this->lockFile);
+    }
+  }
+
+  public function __destruct()
+  {
+    $this->destroyLock();
+  }
+}
+
+new GitDeployServer();
+?>
