@@ -7,7 +7,7 @@ if(is_file('git-deploy'))
 }
 else
 {
-  echo 'Git-deploy not found in server hook dir!';
+  echo 'Git-deploy not found in server hook dir!'."\n";
   exit();
 }
 
