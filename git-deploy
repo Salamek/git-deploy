@@ -1,5 +1,4 @@
 #!/usr/bin/php
-
 <?php
 
 /**
@@ -927,11 +926,20 @@ class GitDeployServer
   public $currentRevision;
   public $tmp;
 
-  public function __construct()
+  public function __construct($stdin = null)
   {
     //Get data
     //$this->findConfig();
-    $this->stdin = trim(fgets(STDIN));
+
+    if(!$stdin)
+    {
+      $this->stdin = explode(' ', trim(fgets(STDIN)));
+    }
+    else
+    {
+      $this->stdin = $stdin;
+    }
+
     $this->selfPath = getcwd();
     $this->gitUser = get_current_user();
     $this->gitHost = php_uname('n');
@@ -941,7 +949,7 @@ class GitDeployServer
     $this->sshPath = $this->gitUser . '@' . $this->gitHost . ':' . str_replace($this->repositoryPath, '', $this->selfPath);
 
     //Parse stdin
-    list($prev, $current, $branch) = explode(' ', $this->stdin);
+    list($prev, $current, $branch) = $this->stdin;
     $this->previousRevision = $prev;
     $this->currentRevision = $current;
     $this->branch = end(explode('/', $branch));
@@ -1078,7 +1086,7 @@ $stdin = explode(' ', trim(fgets(STDIN)));
 //We have 3 parameters i assume its post-reacive hook
 if(count($stdin) == 3)
 {
-  new GitDeployServer();
+  new GitDeployServer($stdin);
 }
 //One argv, thats is client side
 else if(count($argv) == 1)
