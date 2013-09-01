@@ -1083,7 +1083,7 @@ class GitDeployServer
 
 $stdin = explode(' ', trim(fgets(STDIN)));
 
-//We have 3 parameters i assume its post-reacive hook
+//We have 3 parameters i assume its post-receive hook
 if(count($stdin) == 3)
 {
   new GitDeployServer($stdin);
