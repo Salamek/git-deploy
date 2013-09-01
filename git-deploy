@@ -938,9 +938,6 @@ class GitDeployServer
    */
   public function __construct($stdin = null)
   {
-    //Get data
-    //$this->findConfig();
-
     if (!$stdin)
     {
       $this->stdin = explode(' ', trim(fgets(STDIN)));
@@ -1038,37 +1035,6 @@ class GitDeployServer
   {
     new GitDeploy($this->tmp);
     $this->destroyLock();
-  }
-
-  /**
-   * Finds configuretion 
-   */
-  private function findConfig()
-  {
-    //Currently supports only gitlab
-    $srvs = array('gitlab');
-
-    foreach ($srvs AS $srv)
-    {
-      if (is_dir($_SERVER['HOME'] . '/' . $srv))
-      {
-        break;
-      }
-    }
-
-    switch ($srv)
-    {
-      case 'gitlab':
-        if (function_exists('yaml_parse_file'))
-        {
-          print_r(yaml_parse_file($_SERVER['HOME'] . '/gitlab/config/gitlab.yml'));
-        }
-        else
-        {
-          echo Color::string('I found gitlab, but i can\'t parse config file because function yaml_parse_file is missing!', 'white', 'red');
-        }
-        break;
-    }
   }
 
   /**
