@@ -35,13 +35,15 @@ Here is a sample code for FTP acces (port can be omitted):
     ;target configuration
     [deploy]    
     ;;protocols can be sftp for SSH (SCP), ftp or ftps for FTP or secure FTP
-    target = 'ftp://user:password@sadam.dyndns-server.com:21/home/sadam/deploy-test'
+    target = 'ftp://user:password@example.com:21/path/to/deploy'
+    ;or private key auth over SSH :
+    ;target = 'sftp://user@example.com:22/path/to/deploy'
     ;;deploy a project or not
     deploy = true
 
     ;Special rights for files relative to git root
     [file_rights]
-    bin/git-deploy = 777
+    dir/file = 777
 
 ## How It Works
 
