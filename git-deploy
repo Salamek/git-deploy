@@ -572,7 +572,7 @@ class SSH
   private $connection = NULL;
   private $sftpConnection = NULL;
   //Keep this empty or NULL for autodetection!
-  //private $fingerprints         = array();
+  private $fingerprints         = array();
   private $publicKey = NULL;
   private $privateKey = NULL;
   private $privateKeyPassphrase = NULL;
@@ -606,11 +606,10 @@ class SSH
 
     $keyInfo = $this->findKeys();
 
-    /* !FIXME idk how to calculate FP from this or it is possible
-     * if(!$this->fingerprints)
-      {
+    if(!$this->fingerprints)
+    {
       $this->fingerprints = $keyInfo['fingerprints'];
-      } */
+    }
 
     if (!$this->publicKey)
     {
@@ -622,12 +621,11 @@ class SSH
       $this->privateKey = $keyInfo['privateKey'];
     }
 
-    /* !FIXME idk how to calculate FP from this or it is possible
-      $fingerprint = ssh2_fingerprint($this->connection, SSH2_FINGERPRINT_SHA1 | SSH2_FINGERPRINT_HEX);
-      if(!in_array($fingerprint, $this->fingerprints))
-      {
+    $fingerprint = ssh2_fingerprint($this->connection, SSH2_FINGERPRINT_SHA1 | SSH2_FINGERPRINT_HEX);
+    /* !FIXME how the fuck get fingerprint from know_hosts if(!in_array($fingerprint, $this->fingerprints))
+    {
       throw new Exception('Server has unknow fingerprint :'. $fingerprint);
-      } */
+    }*/
 
     //No password, lets try keys
     if (!$password)
