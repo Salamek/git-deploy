@@ -17,7 +17,7 @@ class GitDeploy
 
   /**
    * Constructor
-   * @param GitDeployServer $config
+   * @param string $config
    */
   public function __construct($config = NULL)
   {
@@ -47,13 +47,11 @@ class GitDeploy
         {
           $this->deploy();
         }
-      }
-      catch (Exception $e)
+      } catch (Exception $e)
       {
         echo Color::string($e->getMessage(), 'white', 'red');
       }
-    }
-    catch (Exception $e)
+    } catch (Exception $e)
     {
       echo Color::string($e->getMessage(), 'white', 'red');
     }
@@ -85,7 +83,7 @@ class GitDeploy
     }
     else
     {
-      echo Color::string($this->root.'/'.$this->configFile.' not found!, skiping deploy...','green', 'black');
+      echo Color::string($this->root . '/' . $this->configFile . ' not found!, skiping deploy...', 'green', 'black');
     }
   }
 
@@ -124,8 +122,7 @@ class GitDeploy
         $gitRevisionLog = $gitRevision = trim($this->git->getRevision());
       }
       $revision = trim($connection->readFile($this->config['uri']['path'] . '/' . $this->revisonFile));
-    }
-    catch (Exception $e)
+    } catch (Exception $e)
     {
       //here i assume no version file on remote, so invalide version check
       $gitRevision = FALSE;
@@ -590,7 +587,7 @@ class SSH
   public function __construct($host, $user, $root = '/', $port = NULL, $password = NULL)
   {
     $this->root = $root;
-    if(function_exists('ssh2_connect'))
+    if (function_exists('ssh2_connect'))
     {
       $this->connection = ssh2_connect($host, $port);
     }
@@ -864,6 +861,7 @@ class Color
 
     return $colored_string . PHP_EOL;
   }
+
 }
 
 /**
@@ -889,9 +887,8 @@ class Tools
 
     return (substr($haystack, -$length) === $needle);
   }
+
 }
-
-
 
 /**
  * GitDeployServer is used as post-receive hook with GitDeploy class to deploy specified projects and branches to remote servers
@@ -939,7 +936,7 @@ class GitDeployServer
     //Get data
     //$this->findConfig();
 
-    if(!$stdin)
+    if (!$stdin)
     {
       $this->stdin = explode(' ', trim(fgets(STDIN)));
     }
@@ -972,8 +969,7 @@ class GitDeployServer
       $this->runningJob();
       $this->sync();
       $this->deploy();
-    }
-    catch (Exception $e)
+    } catch (Exception $e)
     {
       echo Color::string($e->getMessage(), 'white', 'red');
     }
@@ -984,7 +980,7 @@ class GitDeployServer
    */
   private function runningJob()
   {
-    $waitTime = 10;//s
+    $waitTime = 10; //s
     while ($this->checkWork())
     {
       echo Color::string(sprintf('Another deploy job is running, waiting %d s to try again...', $waitTime), 'yellow', 'black');
@@ -1010,7 +1006,6 @@ class GitDeployServer
     }
     return false;
   }
-
 
   /**
    * Method sync local TMP with main repo
@@ -1079,25 +1074,24 @@ class GitDeployServer
   {
     $this->destroyLock();
   }
-}
 
+}
 
 $stdin = explode(' ', trim(fgets(STDIN)));
 
 //We have 3 parameters i assume its post-receive hook
-if(count($stdin) == 3)
+if (count($stdin) == 3)
 {
   new GitDeployServer($stdin);
 }
 //One argv, thats is client side
-else if(count($argv) == 1)
+else if (count($argv) == 1)
 {
   new GitDeploy();
 }
 //Two params, i assume client side with specified repositorty dir
-else if(count($argv) == 2)
+else if (count($argv) == 2)
 {
   new GitDeploy($argv[1]);
 }
-
 ?>
