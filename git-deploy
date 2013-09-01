@@ -632,14 +632,14 @@ class SSH
     //No password, lets try keys
     if (!$password)
     {
-      if (!ssh2_auth_pubkey_file($this->connection, $user, $this->publicKey, $this->privateKey, $this->privateKeyPassphrase))
+      if (!@ssh2_auth_pubkey_file($this->connection, $user, $this->publicKey, $this->privateKey, $this->privateKeyPassphrase))
       {
         throw new Exception('Autentication rejected by server!');
       }
     }
     else
     {
-      if (!ssh2_auth_password($this->connection, $user, $password))
+      if (!@ssh2_auth_password($this->connection, $user, $password))
       {
         throw new Exception('Failed to log in, incorrect password or login!');
       }
