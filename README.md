@@ -12,6 +12,9 @@ git-deploy supports deployment over SSH and FTP/S
 git-deploy requires PHP5.3 >, PHP was chosen becouse this tool was primary created for company where PHP is main
 language and use any other language would make maintance and further developement very hard for this company.
 
+### Depedencies
+* `PECL SSL` for SSH support
+
 ### Client
 
 For deploy from client side, copy `git-deploy` into `/usr/bin` just run `git deploy` from git root directory.
