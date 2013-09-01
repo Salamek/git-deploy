@@ -30,17 +30,18 @@ For server deployment proceed as for client and simlink `/usr/bin/git-deploy` AS
 
 In the root directory of your source code, create a <code>deploy.ini</code> file.
 
-Here is a sample code for FTP acces (skip option can be omitted):
+Here is a sample code for FTP acces (port can be omitted):
 
     ;target configuration
-    [deploy]
-    target = 'sftp://sadam@sadam.dyndns-server.com:22/home/sadam/deploy-test'
+    [deploy]    
+    ;;protocols can be sftp for SSH (SCP), ftp or ftps for FTP or secure FTP
+    target = 'ftp://user:password@sadam.dyndns-server.com:21/home/sadam/deploy-test'
+    ;;deploy a project or not
     deploy = true
 
     ;Special rights for files relative to git root
     [file_rights]
     bin/git-deploy = 777
-
 
 ## How It Works
 
