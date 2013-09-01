@@ -947,7 +947,7 @@ class GitDeployServer
     }
 
     $this->selfPath = getcwd();
-    $this->gitUser = get_current_user();
+    $this->gitUser = $_SERVER['USER'];
     $this->gitHost = php_uname('n');
     $this->repositoryPath = '/home/' . $this->gitUser . '/repositories/';
 
