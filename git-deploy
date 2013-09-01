@@ -98,15 +98,15 @@ class GitDeploy
     switch ($this->config['uri']['scheme'])
     {
       case 'sftp':
-        $connection = new SSH($this->config['uri']['host'], $this->config['uri']['user'], $this->config['uri']['path'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
+        $connection = new SSH($this->config['uri']['host'], $this->config['uri']['user'], $this->config['uri']['path'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : 22), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
         break;
 
       case 'ftp':
-        $connection = new FTP($this->config['uri']['host'], $this->config['uri']['user'], $this->config['uri']['path'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
+        $connection = new FTP($this->config['uri']['host'], $this->config['uri']['user'], $this->config['uri']['path'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : 21), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
         break;
 
       case 'ftps':
-        $connection = new FTPS($this->config['uri']['host'], $this->config['uri']['user'], $this->config['uri']['path'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : NULL), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
+        $connection = new FTPS($this->config['uri']['host'], $this->config['uri']['user'], $this->config['uri']['path'], (isset($this->config['uri']['port']) ? $this->config['uri']['port'] : 21), (isset($this->config['uri']['pass']) ? $this->config['uri']['pass'] : NULL));
         break;
     }
 
@@ -366,7 +366,7 @@ class FTPS extends FTP
    * @param string $password Password (Optional)
    * @throws Exception
    */
-  public function __construct($host, $user, $root = '/', $port = NULL, $password = NULL)
+  public function __construct($host, $user, $root = '/', $port = 21, $password = NULL)
   {
     $this->root = $root;
     $this->connection = @ftp_ssl_connect($host, $port);
@@ -402,7 +402,7 @@ class FTP
    * @param string $password Password (Optional)
    * @throws Exception
    */
-  public function __construct($host, $user, $root = '/', $port = NULL, $password = NULL)
+  public function __construct($host, $user, $root = '/', $port = 21, $password = NULL)
   {
     $this->root = $root;
     $this->connection = @ftp_connect($host, $port);
@@ -587,7 +587,7 @@ class SSH
    * @param string $password Password (Optional)
    * @throws Exception
    */
-  public function __construct($host, $user, $root = '/', $port = NULL, $password = NULL)
+  public function __construct($host, $user, $root = '/', $port = 22, $password = NULL)
   {
     $this->root = $root;
     if (function_exists('ssh2_connect'))
