@@ -47,11 +47,13 @@ class GitDeploy
         {
           $this->deploy();
         }
-      } catch (Exception $e)
+      } 
+      catch (Exception $e)
       {
         echo Color::string($e->getMessage(), 'white', 'red');
       }
-    } catch (Exception $e)
+    } 
+    catch (Exception $e)
     {
       echo Color::string($e->getMessage(), 'white', 'red');
     }
@@ -122,7 +124,8 @@ class GitDeploy
         $gitRevisionLog = $gitRevision = trim($this->git->getRevision());
       }
       $revision = trim($connection->readFile($this->config['uri']['path'] . '/' . $this->revisonFile));
-    } catch (Exception $e)
+    } 
+    catch (Exception $e)
     {
       //here i assume no version file on remote, so invalide version check
       $gitRevision = FALSE;
@@ -931,6 +934,10 @@ class GitDeployServer
   public $currentRevision;
   public $tmp;
 
+  /**
+   * Constructor
+   * @param string $stdin STDIN
+   */
   public function __construct($stdin = null)
   {
     //Get data
@@ -969,7 +976,8 @@ class GitDeployServer
       $this->runningJob();
       $this->sync();
       $this->deploy();
-    } catch (Exception $e)
+    } 
+    catch (Exception $e)
     {
       echo Color::string($e->getMessage(), 'white', 'red');
     }
@@ -1034,6 +1042,9 @@ class GitDeployServer
     $this->destroyLock();
   }
 
+  /**
+   * Finds configuretion 
+   */
   private function findConfig()
   {
     //Currently supports only gitlab
@@ -1062,6 +1073,9 @@ class GitDeployServer
     }
   }
 
+  /**
+   * Method destroys lock file
+   */
   private function destroyLock()
   {
     if ($this->lockFile && is_file($this->tmp . '/' . $this->lockFile))
@@ -1069,12 +1083,14 @@ class GitDeployServer
       unlink($this->tmp . '/' . $this->lockFile);
     }
   }
-
+  
+  /**
+   * Desctructort
+   */
   public function __destruct()
   {
     $this->destroyLock();
   }
-
 }
 
 $stdin = explode(' ', trim(fgets(STDIN)));
