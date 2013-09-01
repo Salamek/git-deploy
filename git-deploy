@@ -83,10 +83,10 @@ class GitDeploy
         throw new Exception('Failed to parse ' . $this->root . '/' . $this->configFile);
       }
     }
-    /* else
-      {
-      throw new Exception($this->root.'/'.$this->configFile.' not found!');
-      } */
+    else
+    {
+      echo Color::string($this->root.'/'.$this->configFile.' not found!, skiping deploy...','green', 'black');
+    }
   }
 
   /**
@@ -590,7 +590,15 @@ class SSH
   public function __construct($host, $user, $root = '/', $port = NULL, $password = NULL)
   {
     $this->root = $root;
-    $this->connection = ssh2_connect($host, $port);
+    if(function_exists('ssh2_connect'))
+    {
+      $this->connection = ssh2_connect($host, $port);
+    }
+    else
+    {
+      throw new Exception('Function ssh2_connect not found!, please install PECL SSL or use differend protocol');
+    }
+
     if (!$this->connection)
     {
       throw new Exception('Failed to connect to server!');
@@ -1027,14 +1035,7 @@ class GitDeployServer
    */
   private function deploy()
   {
-    if (class_exists('GitDeploy'))
-    {
-      new GitDeploy($this);
-    }
-    else
-    {
-      throw new Exception('GitDeploy not found!');
-    }
+    new GitDeploy($this->tmp);
     $this->destroyLock();
   }
 
