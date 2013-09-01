@@ -32,7 +32,7 @@ class GitDeploy
       }
       else
       {
-        echo Color::string($config . 'is not a directory or dont exists!', 'white', 'red');
+        throw new Exception($config . ' is not a directory or dont exists!');
       }
     }
 
