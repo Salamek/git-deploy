@@ -3,7 +3,7 @@
 ## Description
 
 git-deploy is a deployment tool to allow for quick and easy deployments based on
-the changes in a git repository, from git server on git push command or manualy from client.
+the changes in a git repository, from git server on `git push` command or manualy from client.
 
 git-deploy supports deployment over SSH and FTP/S
 
