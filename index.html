@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Git-deploy : Server side and client side Git deployement tool" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Git-deploy</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/Salamek/git-deploy">View on GitHub</a>
+
+          <h1 id="project_title">Git-deploy</h1>
+          <h2 id="project_tagline">Server side and client side Git deployement tool</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/Salamek/git-deploy/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/Salamek/git-deploy/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="git-deploy" class="anchor" href="#git-deploy"><span class="octicon octicon-link"></span></a>git-deploy</h1>
+
+<h2>
+<a name="description" class="anchor" href="#description"><span class="octicon octicon-link"></span></a>Description</h2>
+
+<p>git-deploy is a deployment tool to allow for quick and easy deployments based on
+the changes in a git repository, from git server on <code>git push</code> command or manualy from client:</p>
+
+<p><img src="https://gist.github.com/Salamek/6412607/raw/a8942ce9a0b6d638a70caf9618e97cd8b31f87b1/anim.gif" alt="Animation of active deploy"></p>
+
+<p>git-deploy supports deployment over SSH and FTP/S</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>git-deploy requires PHP5.3 &gt;, PHP was chosen becouse this tool was primary created for company where PHP is main
+language and use any other language would make maintance and further developement very hard for this company.</p>
+
+<h3>
+<a name="depedencies" class="anchor" href="#depedencies"><span class="octicon octicon-link"></span></a>Depedencies</h3>
+
+<ul>
+<li>
+<code>PECL SSL</code> for SSH support</li>
+</ul><h3>
+<a name="client" class="anchor" href="#client"><span class="octicon octicon-link"></span></a>Client</h3>
+
+<p>For deploy from client side, copy <code>git-deploy</code> into <code>/usr/bin</code> just run <code>git deploy</code> from git root directory.</p>
+
+<h3>
+<a name="server" class="anchor" href="#server"><span class="octicon octicon-link"></span></a>Server</h3>
+
+<p>For server deployment proceed as for client and simlink <code>/usr/bin/git-deploy</code> AS <code>post-receive</code> in hooks directory, this GIT server implementations are supported and tested:</p>
+
+<ul>
+<li>
+<a href="http://gitlab.org/">Gitlab</a> </li>
+</ul><h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>In the root directory of your source code, create a <code>deploy.ini</code> file.</p>
+
+<p>Here is a sample code for FTP acces (port can be omitted):</p>
+
+<pre><code>;target configuration
+[deploy]    
+;;protocols can be sftp for SSH (SCP), ftp or ftps for FTP or secure FTP
+target = 'ftp://user:password@example.com:21/path/to/deploy'
+;or private key auth over SSH :
+;target = 'sftp://user@example.com:22/path/to/deploy'
+;;deploy a project or not
+deploy = true
+
+;Special rights for files relative to git root
+[file_rights]
+dir/file = 777
+</code></pre>
+
+<h2>
+<a name="how-it-works" class="anchor" href="#how-it-works"><span class="octicon octicon-link"></span></a>How It Works</h2>
+
+<p><code>git-deploy</code> stores file called <code>REVISION</code> on your server inside the root path to your application.
+This file stores the current revision of your application residing on your server.</p>
+
+<p>When you run a <code>git deploy</code>, <code>git-deploy</code> downloads the <code>REVISION</code> file, and checks to see what
+files are different between revisions and either upload the changed files or delete them from the server.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Git-deploy maintained by <a href="https://github.com/Salamek">Salamek</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
