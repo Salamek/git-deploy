@@ -953,7 +953,7 @@ class GitDeployServer
 
     //Build needed info
     $this->sshPath = $this->gitUser . '@' . $this->gitHost . ':' . str_replace($this->repositoryPath, '', $this->selfPath);
-
+    echo Color::string('Path to repository is: ' . $this->sshPath, 'white', 'black');
     //Parse stdin
     list($prev, $current, $branch) = $this->stdin;
     $this->previousRevision = $prev;
