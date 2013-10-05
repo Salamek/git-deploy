@@ -54,3 +54,6 @@ This file stores the current revision of your application residing on your serve
 
 When you run a `git deploy`, `git-deploy` downloads the `REVISION` file, and checks to see what
 files are different between revisions and either upload the changed files or delete them from the server.
+
+## Other sources
+* [Czech version of this README.md on Abclinuxu.cz](http://www.abclinuxu.cz/blog/salamovo/2013/9/git-deploy)
