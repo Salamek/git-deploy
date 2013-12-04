@@ -47,12 +47,12 @@ class GitDeploy
         {
           $this->deploy();
         }
-      } 
+      }
       catch (Exception $e)
       {
         echo Color::string($e->getMessage(), 'white', 'red');
       }
-    } 
+    }
     catch (Exception $e)
     {
       echo Color::string($e->getMessage(), 'white', 'red');
@@ -124,7 +124,7 @@ class GitDeploy
         $gitRevisionLog = $gitRevision = trim($this->git->getRevision());
       }
       $revision = trim($connection->readFile($this->config['uri']['path'] . '/' . $this->revisonFile));
-    } 
+    }
     catch (Exception $e)
     {
       //here i assume no version file on remote, so invalide version check
@@ -148,25 +148,64 @@ class GitDeploy
 
       $files = $this->git->diffCommited($revision);
 
+      $errors = array();
       foreach ($files['upload'] AS $upload)
       {
         if (!Tools::endsWith($upload, $this->configFile))
         {
-          $premisson = $this->checkPremisson($upload);
-          $connection->uploadFile($this->root . '/' . $upload, $this->config['uri']['path'] . '/' . $upload, $premisson);
-          echo Color::string('++ Deploying file ' . $this->config['uri']['path'] . '/' . $upload, 'green', 'black');
+          try
+          {
+            $premisson = $this->checkPremisson($upload);
+            $connection->uploadFile($this->root . '/' . $upload, $this->config['uri']['path'] . '/' . $upload, $premisson);
+            echo Color::string('++ Deploying file ' . $this->config['uri']['path'] . '/' . $upload, 'green', 'black');
+          }
+          catch(Exception $e)
+          {
+            $errors[] = $e->getMessage();
+          }
         }
       }
 
       foreach ($files['delete'] AS $delete)
       {
-        $connection->deleteFile($this->config['uri']['path'] . '/' . $delete);
-        echo Color::string('-- Deleting file ' . $delete, 'green', 'black');
+        try
+        {
+          $connection->deleteFile($this->config['uri']['path'] . '/' . $delete);
+          echo Color::string('-- Deleting file ' . $delete, 'green', 'black');
+        }
+        catch(Exception $e)
+        {
+          $errors[] = $e->getMessage();
+        }
       }
 
       $connection->uploadString($this->config['uri']['path'] . '/' . $this->revisonFile, $gitRevisionLog);
 
-      echo Color::string('Deploying done!', 'white', 'green');
+      if(!empty($errors))
+      {
+        foreach($errors AS $error)
+        {
+          echo Color::string($error, 'white', 'red');
+        }
+
+        if(isset($this->config['deploy']['maintainer']) && $this->config['deploy']['maintainer'])
+        {
+          if(filter_var($this->config['deploy']['maintainer'], FILTER_VALIDATE_EMAIL))
+          {
+            @mail($this->config['deploy']['maintainer'], sprintf('%d errors occurred while deploying project %s ', count($errors), $this->config['uri']['host']), implode("\n", $errors));
+          }
+          else
+          {
+            echo Color::string('Maintainer email is set, but has wrong format!', 'white', 'red');
+          }
+        }
+
+        echo Color::string('Deploying done, but some errors occurred!', 'white', 'yellow');
+      }
+      else
+      {
+        echo Color::string('Deploying done!', 'white', 'green');
+      }
     }
     else
     {
@@ -970,7 +1009,7 @@ class GitDeployServer
       $this->runningJob();
       $this->sync();
       $this->deploy();
-    } 
+    }
     catch (Exception $e)
     {
       echo Color::string($e->getMessage(), 'white', 'red');
