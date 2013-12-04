@@ -205,6 +205,18 @@ class GitDeploy
       else
       {
         echo Color::string('Deploying done!', 'white', 'green');
+
+        if(isset($this->config['deploy']['remote_hook']) && $this->config['deploy']['remote_hook'])
+        {
+          if(filter_var($this->config['deploy']['remote_hook'], FILTER_VALIDATE_URL))
+          {
+            file_get_contents($this->config['deploy']['remote_hook']);
+          }
+          else
+          {
+            echo Color::string('remote_hook specified but its not valid URL', 'white', 'yellow');
+          }
+        }
       }
     }
     else
