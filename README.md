@@ -42,10 +42,15 @@ Here is a sample code for FTP acces (port can be omitted):
     ;target = 'sftp://user@example.com:22/path/to/deploy'
     ;;deploy a project or not
     deploy = true
+    ;Optional, email of maintainer to recieve info about deploy errors
+    maintainer = adam.schubert@example.com
+    ;Optional, use this to trigger remote host on remote server, eg for cache flushing
+    ;remote_hook = http://www.example.com
 
-    ;Special rights for files relative to git root
+    ;Optional, Special rights for files relative to git root
     [file_rights]
-    dir/file = 777
+    dir/file/* = 777
+    dir/file = 775
 
 ## How It Works
 
