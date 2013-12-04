@@ -234,7 +234,7 @@ class GitDeploy
   {
     foreach ($this->config['file_rights'] AS $k => $v)
     {
-      if (Tools::endsWith($filename, $k) !== FALSE)
+      if (Tools::endsWith($filename, $k) !== FALSE || $k == '*' || (strpos($k, '*') !== FALSE && Tools::startWith($filename, str_replace('*', '', $k))))
       {
         return octdec($v);
       }
@@ -939,6 +939,16 @@ class Tools
     return (substr($haystack, -$length) === $needle);
   }
 
+  /**
+   * Helper method checks if string starts with a string :)
+   * @param string $haystack
+   * @param string $needle
+   * @return boolean
+   */
+  public static function startWith($haystack, $needle)
+  {
+    return (strpos($haystack, $needle) == 0 ? true : false);
+  }
 }
 
 /**
