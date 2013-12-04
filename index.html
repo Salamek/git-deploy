@@ -84,11 +84,16 @@ target = 'ftp://user:password@example.com:21/path/to/deploy'
 ;target = 'sftp://user@example.com:22/path/to/deploy'
 ;;deploy a project or not
 deploy = true
-
-;Special rights for files relative to git root
-[file_rights]
-dir/file = 777
+;Optional, email of maintainer to recieve info about deploy errors
+maintainer = adam.schubert@example.com
+;Optional, use this to trigger remote host on remote server, eg for cache flushing
+;remote_hook = http://www.example.com
 </code></pre>
+
+<p>;Optional, Special rights for files relative to git root
+[file_rights]
+dir/file/* = 777
+dir/file = 775</p>
 
 <h2>
 <a name="how-it-works" class="anchor" href="#how-it-works"><span class="octicon octicon-link"></span></a>How It Works</h2>
