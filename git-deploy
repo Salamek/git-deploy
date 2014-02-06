@@ -456,6 +456,12 @@ class FTP
   public function __construct($host, $user, $root = '/', $port = 21, $password = NULL)
   {
     $this->root = $root;
+    
+    if(!function_exists('ftp_connect'))
+    {
+      throw new Exception('Function ftp_connect not found, FTP deploy is not available! Please enable ftp module in php.ini');
+    }
+    
     $this->connection = @ftp_connect($host, $port);
     if (!$this->connection)
     {
