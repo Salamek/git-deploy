@@ -804,9 +804,34 @@ class SSH
   public function uploadFile($from, $to, $premisson = 0755)
   {
     $this->createPath($to, $premisson);
-    if (!@ssh2_scp_send($this->connection, $from, $to, $premisson))
+    $sftpStream = @fopen('ssh2.sftp://'.$this->sftpConnection.$to, 'w');
+
+    try 
     {
-      throw new Exception(sprintf('Failed to copy file %s to %s on remote server', $from, $to));
+    	if (!$sftpStream) 
+    	{
+    	    throw new Exception("Could not open remote file: $to");
+    	}
+    	
+    	$data_to_send = @file_get_contents($from);
+    	
+    	if ($data_to_send === false) 
+    	{
+    	    throw new Exception("Could not open local file: $from.");
+    	}
+    	
+    	if (@fwrite($sftpStream, $data_to_send) === false) 
+    	{
+    	    throw new Exception("Could not send data from file: $from.");
+    	}
+    	
+    	fclose($sftpStream);
+			
+    } 
+    catch (Exception $e) 
+    {
+    	fclose($sftpStream);
+    	throw $e;
     }
   }
 
