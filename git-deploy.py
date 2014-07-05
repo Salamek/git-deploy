@@ -33,19 +33,19 @@ class GitDeploy:
       else:
         raise Exception(config + ' is not a directory or dont exists!')
 
-    try:
-      self.git = Git();
-      self.root = self.git.get_git_root(root)
-      try:
-        self.parse_config()
-        if self.config['deploy']['deploy'] == True:
-          self.deploy()
-      except Exception as e:
-        raise e
-        print(Color.string(str(e), 'white', 'red'))
-    except Exception as e:
-      raise e
-      print(Color.string(str(e), 'white', 'red'))
+    #try:
+    self.git = Git(root);
+    self.root = self.git.root
+    #  try:
+    self.parse_config()
+    if self.config['deploy']['deploy'] == True:
+      self.deploy()
+    #  except Exception as e:
+    #    raise e
+    #    print(Color.string(str(e), 'white', 'red'))
+    #except Exception as e:
+    #  raise e
+    #  print(Color.string(str(e), 'white', 'red'))
   
   
   def parse_config(self):
@@ -63,8 +63,9 @@ class GitDeploy:
         self.config['deploy']['maintainer'] = config.get('deploy', 'maintainer')
         self.config['deploy']['file_rights'] = config.items('file_rights')
 
-        self.config['uri'] = urlparse.urlparse(self.config['deploy']['target'])
-        if self.config['uri'] == None:
+        self.config['uri'] = urlparse.urlparse(self.config['deploy']['target'].strip("'"))
+
+        if self.config['uri'] == None or self.config['uri'].hostname == None:
           raise Exception('Failed to prase URI in config file')
       except IOError:
         raise Exception('Failed to parse ' + config_file_path);
@@ -105,22 +106,24 @@ class GitDeploy:
     git_revision_log = None;
     try:
       if self.current_revision:
-        git_revision_log = git_revision = self.current_revision;
+        git_revision = git_revision_log = self.current_revision
       else:
-        git_revision_log = git_revision = self.git.get_revision()
-      revision = connection.read_file(os.path.join(elf.config['uri']['path'], self.revison_file).strip())
+        git_revision = git_revision_log = self.git.get_revision()
     except Exception as e:
-      #here i assume no version file on remote, so invalide version check
       git_revision = None;
+
+    try:
+      revision = connection.read_file(os.path.join(self.config['uri'].path, self.revison_file).strip())
+    except Exception as e:
       revision = None;
 
     #Revision not match, we must get changes and upload it on server
     if git_revision != revision:
-      if revision and gitRevision:
-        text = 'Remote revision is {}, current revison is {}'.format(revision, gitRevision)
+      if revision and git_revision:
+        text = 'Remote revision is {}, current revison is {}'.format(revision, git_revision)
         print(Color.string(text, 'green', 'black'))
       else:
-        text = 'No remote revision found, deploying whole project {}'.format(gitRevisionLog)
+        text = 'No remote revision found, deploying whole project {}'.format(git_revision_log)
         print(Color.string(text, 'green', 'black'))
 
       files = self.git.diff_commited(revision);
@@ -130,20 +133,20 @@ class GitDeploy:
         if upload.endswith(self.config_file) == False:
           try:
             premisson = self.check_premisson(upload)
-            connection.upload_file(os.path.join(self.root, upload), os.path.join(self.config['uri']['path'], upload), premisson)
-            print(Color.string('++ Deploying file ' + self.config['uri']['path'] + '/' + upload, 'green', 'black'))
+            connection.upload_file(os.path.join(self.root, upload), os.path.join(self.config['uri'].path, upload), premisson)
+            print(Color.string('++ Deploying file ' + self.config['uri'].path + '/' + upload, 'green', 'black'))
           except Exception as e:
-            errors.push(str(e))
+            errors.append(str(e))
 
 
       for delete in files['delete']:
         try:
-          connection.delete_file(os.path.join(self.config['uri']['path'], delete))
-          print(Color.string('++ Deleting file ' + self.config['uri']['path'] + '/' + delete, 'green', 'black'))
+          connection.delete_file(os.path.join(self.config['uri'].path, delete))
+          print(Color.string('++ Deleting file ' + self.config['uri'].path + '/' + delete, 'green', 'black'))
         except Exception as e:
-          errors.push(str(e))
+          errors.append(str(e))
 
-      connection.upload_string(os.path.join(self.config['uri']['path'],self.revison_file), git_revision_log);
+      connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log);
 
       if len(errors):
         for error in errors:
@@ -152,7 +155,7 @@ class GitDeploy:
 	
         if self.config['deploy']['maintainer']:
           if not re.match(r"[^@]+@[^@]+\.[^@]+", self.config['deploy']['maintainer']):
-            msg = '{} errors occurred while deploying project {}'.format(len(errors), self.config['uri']['host'])
+            msg = '{} errors occurred while deploying project {}'.format(len(errors), self.config['uri'].hostname)
             server = smtplib.SMTP('localhost')
             server.sendmail('noreply@localhost', self.config['deploy']['maintainer'], msg)
             server.quit()
@@ -166,9 +169,10 @@ class GitDeploy:
       print(Color.string('Revisions match, no deploy needed.', 'white', 'green'))
       
   def check_premisson(self, filename):
-    for k, v in self.config['file_rights'].items():
-      if filename.endswith(k) or k == '*' or '*' in k and filename.startwith(k.replace('*', '')):
-        return v;
+    #FIXME
+    #for item in self.config['file_rights']:
+    #  if filename.endswith(k) or k == '*' or '*' in k and filename.startwith(k.replace('*', '')):
+    #    return v;
     return None
 
 class Git:
@@ -179,10 +183,14 @@ class Git:
    * Constructor, checks existence of git bin
    * @throws Exception
   """
-  def __init__(self):
+  def __init__(self, root = None):
     if self.is_git() == False:
       raise Exception('Git not found! Please use package manager to install it')
-
+    if root:
+      self.root = root
+    else:
+      self.root = self.get_git_root()
+    
   """
    * Method checks if git is installed and runnable
    * @return boolean
@@ -216,7 +224,9 @@ class Git:
    * @return string
   """
   def get_revision(self):
-    return os.system('unset GIT_DIR && cd ' + self.root + ' && git rev-parse HEAD').strip()
+    proc = subprocess.Popen(['unset GIT_DIR && cd ' + self.root + ' && git rev-parse HEAD'], stdout=subprocess.PIPE, shell=True)
+    output, err = proc.communicate()
+    return output.strip()
 
   """
    * Method returns list of uncommited files
@@ -235,13 +245,29 @@ class Git:
   """
   def diff_commited(self, revision = None):
     files = []
+
     if revision:
-      os.system('unset GIT_DIR && cd ' + self.root + ' && git diff --name-status ' + revision, files)
+      proc = subprocess.Popen(['unset GIT_DIR && cd ' + self.root + ' && git diff --name-status ' + revision],stdout=subprocess.PIPE, shell=True)
+      while True:
+        line = proc.stdout.readline()
+        if line != '':
+          files.append(line.strip())
+        else:
+          break
+    
     else:
       data = []
-      os.system('unset GIT_DIR && cd ' + self.root + ' && git ls-files ' + self.get_git_root() + '  --full-name', data)
+      proc = subprocess.Popen(['unset GIT_DIR && cd ' + self.root + ' && git ls-files ' + self.root + '  --full-name'],stdout=subprocess.PIPE, shell=True)
+      while True:
+        line = proc.stdout.readline()
+        if line != '':
+          data.append(line.strip())
+        else:
+          break
+
       for line in data:
-        files.push('M	' + line)
+        files.append('M	' + line)
+        
     return self.git_parse_files(files)
 
   """
@@ -249,13 +275,10 @@ class Git:
    * @param string $root set absolute fixed git root (usefull when we running deploy form nongit path)
    * @return string path to repo
   """
-  def get_git_root(self, root = None):
-    if root:
-      self.root = root
-    else:
-      proc = subprocess.Popen(['git rev-parse --show-toplevel'], stdout=subprocess.PIPE, shell=True)
-      root, err = proc.communicate()
-      self.root = root.strip()
+  def get_git_root(self):
+    proc = subprocess.Popen(['git rev-parse --show-toplevel'], stdout=subprocess.PIPE, shell=True)
+    root, err = proc.communicate()
+    self.root = root.strip()
     return self.root
 
   """
@@ -273,9 +296,9 @@ class Git:
 
           if os.path.basename(filename) not in ignore:
             if action in ['A', 'M', 'C']:
-              ret['upload'].push(filename)
+              ret['upload'].append(filename)
             elif action in ['D']:
-              ret['delete'].push(filename);
+              ret['delete'].append(filename);
     return ret
 
   
@@ -296,7 +319,7 @@ class Ftp:
     self.root = root
     
     try:
-      self.connection = ftplib.FTP
+      self.connection = ftplib.FTP()
       self.connection.connect(host, port)
     except ftplib.all_errors:
       raise Exception('Failed to connect to server!')
@@ -347,8 +370,8 @@ class Ftp:
   def upload_file(self, from_file, to_file, premisson = None):
     self.create_path(to_file, premisson)
     try:
-      ftp.storlines('STOR {}'.format(to_file), open(from_file, 'r'))
-    except ftplib.all_errors:
+      self.connection.storlines('STOR {}'.format(to_file), open(from_file, 'r'))
+    except ftplib.all_errors as e:
       raise Exception('Failed to copy file {} to {} on remote server'.format(from_file, to_file));
 
     self.set_premission(to_file, premisson)
@@ -361,13 +384,16 @@ class Ftp:
    * @param string $premisson set uploaded file premission (Optional)
   """
   def upload_string(self, file_path, string, premisson = None):
-    self.create_path(to, premisson)
+    self.create_path(file_path, premisson)
     try:
-      ftp.storlines('STOR {}'.format(file_path), string)
-    except ftplib.all_errors:
+      buf = StringIO.StringIO()
+      buf.write(string)
+      buf.seek(0)
+      self.connection.storbinary('STOR {}'.format(file_path), buf)
+    except ftplib.all_errors as e:
       raise Exception('Failed to copy string {} to {} on remote server'.format(string, file_path));
 
-    self.set_premission(to, premisson)
+    self.set_premission(file_path, premisson)
     
   """
    * Method delete file on remote server
@@ -388,7 +414,6 @@ class Ftp:
   """
   def create_path(self, file_path, premisson = None):
     dirs = os.path.dirname(file_path).replace(self.root, '').split('/')
-
     dir_path = self.root
     status = True
     for dir in dirs:
@@ -401,13 +426,12 @@ class Ftp:
           try:
             self.connection.mkd(dir_path)
             self.set_premission(dir_path, premisson)
-            status = True
           except ftplib.all_errors:
+            status = False
             pass
         else:
           break
-      
-    if status:
+    if status == False:
       raise Exception('Failed to create path {} on remote server'.format(dirs))
 
   """
@@ -419,9 +443,9 @@ class Ftp:
   def set_premission(self, file_path, premisson):
     if premisson:
       try:
-	self.connection.sendcmd('chmod {} {} '.format(premisson, file_path))
+        self.connection.sendcmd('chmod {} {} '.format(premisson, file_path))
       except ftplib.all_errors:
-	raise Exception ('Failed to set premisson on {}'.format(file_path))
+        raise Exception ('Failed to set premisson on {}'.format(file_path))
   
   
 class Ftps(Ftp):
@@ -510,7 +534,7 @@ class Ssh:
    * @param string $premisson
    * @throws Exception
   """
-  def upload_file(self, from_file, to_file, premisson = 0755):
+  def upload_file(self, from_file, to_file, premisson = 0o755):
     self.connection.put(from_file, to_file)
    
   """
@@ -519,7 +543,7 @@ class Ssh:
    * @param string $string
    * @param string $premisson
   """
-  def upload_string(self, file_path, string, premisson = 0755):
+  def upload_string(self, file_path, string, premisson = 0o755):
     f = self.sftp.open(file_path, 'wb')
     f.write(string)
     f.close()
@@ -537,7 +561,7 @@ class Ssh:
    * @param type $filePath
    * @param type $premisson
   """
-  def create_path(self, file_path, premisson = 0755):
+  def create_path(self, file_path, premisson = 0o755):
     self.connection.mkdir(os.path.dirname(file_path))
   
   
@@ -591,7 +615,7 @@ class Color:
 
     colored_string += string + "\033[0m"
 
-    return colored_string + os.linesep;
+    return colored_string;
 
   
 class GitDeployServer:
