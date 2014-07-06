@@ -9,28 +9,29 @@ import StringIO
 import paramiko
 import socket
 import os
+import errno
   
 class Ssh:
   connection = None
-  sftp_connection = None
-  fingerprints = []
-  public_key = None
-  private_key = None
-  private_key_passphrase = None
+  ssh = None
   root = None
   
   def __init__(self, host, user, root = '/', port = 22, password = None):
+    paramiko.util.log_to_file('paramiko.log')
     self.root = root
     
-    client = paramiko.SSHClient()
-    client.load_system_host_keys()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    self.ssh = paramiko.SSHClient() 
+    self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
     
     try:
-      client.connect(host, port, user, password)
-      self.connection = client.open_sftp()
+      self.ssh.connect(host, port, user, password)
     except (paramiko.SSHException, socket.error):
       raise Exception('Failed to connect to server!')
+    
+    try:
+      self.connection = self.ssh.open_sftp() 
+    except Exception as err:
+      raise Exception( "Failed to start SFTP session from connection to {}. Check that SFTP service is running and available. Reason: {}".format( hostname, str(err) ))
     
   """
    * Method reads file from remote server
@@ -40,13 +41,15 @@ class Ssh:
   def read_file(self, file_path):
     buf = StringIO.StringIO()
     try:
-      remote_file = self.connection.open(file_path)
-      for line in remote_file:
+      opened_file = self.connection.open(file_path)
+      for line in opened_file:
         buf.write(line)
-    finally:
-      remote_file.close()
-    return buf.getvalue()
-
+      opened_file.close()
+      
+      return buf.getvalue()
+    except Exception as err:
+      print(str(err))
+      raise Exception( "Failed load remote file {} Reason: {}".format( file_path, str(err) ))
 
   """
    * Method downloads file from remote server
@@ -94,5 +97,16 @@ class Ssh:
    * @param type $premisson
   """
   def create_path(self, file_path, premisson = 0o755):
-    self.connection.mkdir(os.path.dirname(file_path))
+    dir_path = os.path.dirname(file_path)
+    
+    try:
+      self.connection.stat(dir_path)
+    except IOError as e:
+      if(e.errno == errno.ENOENT):
+        try:
+          self.connection.mkdir(dir_path)
+        except IOError as e:
+          raise Exception('Failed to create path {} on server Reason: {}'.format(dir_path, str(e)))
+      else:
+        raise Exception('Failed to stat path {} on server Reason: {}'.format(dir_path, str(e)))
   
