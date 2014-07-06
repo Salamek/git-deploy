@@ -48,7 +48,6 @@ class Ssh:
       
       return buf.getvalue()
     except Exception as err:
-      print(str(err))
       raise Exception( "Failed load remote file {} Reason: {}".format( file_path, str(err) ))
 
   """
@@ -70,6 +69,7 @@ class Ssh:
   def upload_file(self, from_file, to_file, premisson = 0o755):
     self.create_path(to_file, premisson)
     self.connection.put(from_file, to_file)
+    self.connection.chmod(to_file, premisson)
    
   """
    * Uploads string on remote server
@@ -82,6 +82,7 @@ class Ssh:
     f = self.connection.open(file_path, 'wb')
     f.write(string)
     f.close()
+    self.connection.chmod(file_path, premisson)
 
   """
    * Deletes file on remote server
@@ -98,13 +99,12 @@ class Ssh:
   """
   def create_path(self, file_path, premisson = 0o755):
     dir_path = os.path.dirname(file_path)
-    
     try:
       self.connection.stat(dir_path)
     except IOError as e:
       if(e.errno == errno.ENOENT):
         try:
-          self.connection.mkdir(dir_path)
+          self.connection.mkdir(dir_path, premisson)
         except IOError as e:
           raise Exception('Failed to create path {} on server Reason: {}'.format(dir_path, str(e)))
       else:
