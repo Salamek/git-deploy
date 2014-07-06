@@ -32,19 +32,19 @@ class GitDeploy:
       else:
         raise Exception(config + ' is not a directory or dont exists!')
 
-    #try:
-    self.git = Git(root);
-    self.root = self.git.root
-    #  try:
-    self.parse_config()
-    if self.config['deploy']['deploy'] == True:
-      self.deploy()
-    #  except Exception as e:
-    #    raise e
-    #    print(Shell.color(str(e), 'white', 'red'))
-    #except Exception as e:
-    #  raise e
-    #  print(Shell.color(str(e), 'white', 'red'))
+    try:
+      self.git = Git(root);
+      self.root = self.git.root
+      try:
+        self.parse_config()
+        if self.config['deploy']['deploy'] == True:
+          self.deploy()
+      except Exception as e:
+        raise e
+        print(Shell.color(str(e), 'white', 'red'))
+    except Exception as e:
+      raise e
+      print(Shell.color(str(e), 'white', 'red'))
   
   
   def parse_config(self):
@@ -168,8 +168,7 @@ class GitDeploy:
       print(Shell.color('Revisions match, no deploy needed.', 'white', 'green'))
       
   def check_premisson(self, filename):
-    #FIXME
-    #for item in self.config['file_rights']:
-    #  if filename.endswith(k) or k == '*' or '*' in k and filename.startwith(k.replace('*', '')):
-    #    return v;
+    for path, premisson in self.config['deploy']['file_rights']:
+      if filename.endswith(path) or path == '*' or '*' in path and filename.startswith(path.replace('*', '')):
+        return premisson
     return None
