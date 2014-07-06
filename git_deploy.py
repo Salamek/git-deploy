@@ -5,6 +5,7 @@ import ConfigParser
 import re
 import smtplib
 import urlparse
+import socket
 
 from classes import Git
 from classes import Ftp
@@ -153,11 +154,14 @@ class GitDeploy:
 
 	
         if self.config['deploy']['maintainer']:
-          if not re.match(r"[^@]+@[^@]+\.[^@]+", self.config['deploy']['maintainer']):
+          if re.match(r"[^@]+@[^@]+\.[^@]+", self.config['deploy']['maintainer']):
             msg = '{} errors occurred while deploying project {}'.format(len(errors), self.config['uri'].hostname)
-            server = smtplib.SMTP('localhost')
-            server.sendmail('noreply@localhost', self.config['deploy']['maintainer'], msg)
-            server.quit()
+            try:
+              server = smtplib.SMTP('localhost')
+              server.sendmail('noreply@localhost', self.config['deploy']['maintainer'], msg)
+              server.quit()
+            except socket.error as e:
+              print(Shell.color('Failed to send email to {} Reason {}'.format(self.config['deploy']['maintainer'], str(e)), 'white', 'red'))
           else:
             print(Shell.color('Maintainer email is set, but has wrong format!', 'white', 'red'))
             print(Shell.color('Deploying done, but some errors occurred!', 'white', 'yellow'))
