@@ -6,6 +6,7 @@ __author__="Adam Schubert"
 __date__ ="$5.7.2014 23:58:01$"
 
 import subprocess
+import os
 
 class Git:
   

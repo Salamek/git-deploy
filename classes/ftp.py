@@ -7,6 +7,7 @@ __date__ ="$6.7.2014 0:00:35$"
 
 import StringIO
 import ftplib
+import os
  
 class Ftp:
   connection = None

@@ -8,6 +8,7 @@ __date__ ="$6.7.2014 0:01:09$"
 import StringIO
 import paramiko
 import socket
+import os
   
 class Ssh:
   connection = None
