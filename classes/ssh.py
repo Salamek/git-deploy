@@ -17,7 +17,7 @@ class Ssh:
   root = None
   
   def __init__(self, host, user, root = '/', port = 22, password = None):
-    paramiko.util.log_to_file('paramiko.log')
+    #paramiko.util.log_to_file('paramiko.log')
     self.root = root
     
     self.ssh = paramiko.SSHClient() 
