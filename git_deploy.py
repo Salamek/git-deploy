@@ -11,7 +11,6 @@ from classes import Git
 from classes import Ftp
 from classes import Ftps
 from classes import Ssh
-from classes import Git
 from classes import Shell
 
 class GitDeploy:
@@ -58,10 +57,25 @@ class GitDeploy:
 
         #parse config and set it into variable
         self.config['deploy'] = {}
-        self.config['deploy']['target'] = config.get('deploy', 'target')
-        self.config['deploy']['deploy'] = config.getboolean('deploy', 'deploy')
-        self.config['deploy']['maintainer'] = config.get('deploy', 'maintainer')
-        self.config['deploy']['file_rights'] = config.items('file_rights')
+        if config.has_option('deploy', 'target'):
+          self.config['deploy']['target'] = config.get('deploy', 'target')
+        else:
+          raise Exception('No taget option found in config {}'.format(config_file_path))
+        
+        if config.has_option('deploy', 'deploy'):
+          self.config['deploy']['deploy'] = config.getboolean('deploy', 'deploy')
+        else:
+          raise Exception('No deploy option found in config {}'.format(config_file_path))
+        
+        if config.has_option('deploy', 'maintainer'):
+          self.config['deploy']['maintainer'] = config.get('deploy', 'maintainer')
+        else:
+          self.config['deploy']['maintainer'] = ''
+        
+        if config.has_section('file_rights'):
+          self.config['deploy']['file_rights'] = config.items('file_rights')
+        else:
+          self.config['deploy']['file_rights'] = {}
 
         self.config['uri'] = urlparse.urlparse(self.config['deploy']['target'].strip("'"))
 
