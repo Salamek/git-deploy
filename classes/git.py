@@ -7,6 +7,7 @@ __date__ ="$5.7.2014 23:58:01$"
 
 import subprocess
 import os
+import re
 
 class Git:
   
@@ -133,4 +134,18 @@ class Git:
             elif action in ['D']:
               ret['delete'].append(filename);
     return ret
+  
+  def git_url_parse(self, url):
+    if re.match(r'((git|ssh|http(s)?)|(git@[\w.]+))(:(//)?)([\w.@\:/-~]+)(.git)(/)?', url):
+      ret = {}
+      
+      netloc, path = url.split(':')
+      user, hostname = netloc.split('@')
+      ret['path'] = path
+      ret['user'] = user
+      ret['hostname'] = hostname
+      return ret
+    else:
+      return None
+      
 
