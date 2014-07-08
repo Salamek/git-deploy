@@ -1,3 +1,4 @@
 deploy.yml
 /nbproject/private/
 *.pyc
+/tmp
