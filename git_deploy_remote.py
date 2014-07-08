@@ -6,6 +6,10 @@ __author__="Adam Schubert"
 __date__ ="$6.7.2014 0:22:44$"
 
 import time
+import os
+import git_deploy
+from classes import Git
+from classes import Shell
 
 class GitDeployRemote:
   ssh_path = None
@@ -20,19 +24,19 @@ class GitDeployRemote:
    * @param string $stdin STDIN
   """
   def __init__(self, current, branch, ssh_path, tmp_path):
-    self.git = Git()
+    
     #Build needed info
     self.ssh_path = ssh_path
-    print(Shell.color('Path to repository is: ' . self.ssh_path, 'white', 'black'))
+    print(Shell.color('Path to repository is: ' + self.ssh_path, 'white', 'black'))
     #Parse stdin
 
     self.current_revision = current
     self.branch = branch.split('/')[-1]
 
     #Separate tmp repos per branch
-    parsed_path = self.git.git_url_parse(ssh_path)
+    parsed_path = Git.git_url_parse(ssh_path)
     self.tmp = os.path.join(tmp_path, parsed_path['hostname'], parsed_path['path'], self.branch)
-
+    self.git = Git(self.tmp)
     try:
       self.running_job()
       self.sync()
@@ -77,14 +81,14 @@ class GitDeployRemote:
    * @throws Exception
   """
   def deploy(self):
-    GitDeploy(self.tmp)
+    git_deploy.GitDeploy(self.tmp)
     self.destroy_lock()
 
   """
    * Method destroys lock file
   """
   def destroy_lock(self):
-    lock_file_path = os.path.join(self.tmp, self.lock_file),;
+    lock_file_path = os.path.join(self.tmp, self.lock_file)
     if self.lock_file and os.path.isfile(lock_file_path):
       os.unlink(lock_file_path);
 
