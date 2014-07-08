@@ -147,5 +147,11 @@ class Git:
       return ret
     else:
       return None
+    
+  def update(self, branch, ssh_path):
+    if os.path.isdir(self.tmp):
+      os.system('unset GIT_DIR && cd ' + self.root + ' && git pull')
+    else:
+      os.system('git clone -b ' + branch + ' ' + ssh_path + ' ' + self.root)
       
 
