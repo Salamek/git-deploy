@@ -135,7 +135,8 @@ class Git:
               ret['delete'].append(filename);
     return ret
   
-  def git_url_parse(self, url):
+  @staticmethod
+  def git_url_parse(url):
     if re.match(r'((git|ssh|http(s)?)|(git@[\w.]+))(:(//)?)([\w.@\:/-~]+)(.git)(/)?', url):
       ret = {}
       
