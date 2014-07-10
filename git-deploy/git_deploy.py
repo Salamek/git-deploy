@@ -2,20 +2,18 @@
 
 import os
 import ConfigParser
-import re
-import smtplib
 import urlparse
-import socket
 
 from classes import Git
 from classes import Ftp
 from classes import Ftps
 from classes import Ssh
-from classes import Shell
+from classes import Log
 
 class GitDeploy:
   
   root = None
+  log = None
   current_revision = None
   git = None
   config_file = 'deploy.ini'
@@ -23,6 +21,7 @@ class GitDeploy:
   revison_file = 'REVISION'
   
   def __init__(self, config = None):
+    self.log = Log()
     self.currentRevision = None
     root = None
     
@@ -41,10 +40,9 @@ class GitDeploy:
           self.deploy()
       except Exception as e:
         raise e
-        print(Shell.color(str(e), 'white', 'red'))
     except Exception as e:
       raise e
-      print(Shell.color(str(e), 'white', 'red'))
+  
   
   
   def parse_config(self):
@@ -134,59 +132,40 @@ class GitDeploy:
     #Revision not match, we must get changes and upload it on server
     if git_revision != revision:
       if revision and git_revision:
-        text = 'Remote revision is {}, current revison is {}'.format(revision, git_revision)
-        print(Shell.color(text, 'green', 'black'))
+        self.log.add('Remote revision is {}, current revison is {}'.format(revision, git_revision), 'ok')
       else:
-        text = 'No remote revision found, deploying whole project {}'.format(git_revision_log)
-        print(Shell.color(text, 'green', 'black'))
+        self.log.add('No remote revision found, deploying whole project {}'.format(git_revision_log), 'ok')
 
       files = self.git.diff_commited(revision);
 
-      errors = []
+      
       for upload in files['upload']:
         if upload.endswith(self.config_file) == False:
           try:
             premisson = self.check_premisson(upload)
             connection.upload_file(os.path.join(self.root, upload), os.path.join(self.config['uri'].path, upload), premisson)
-            print(Shell.color('++ Deploying file ' + self.config['uri'].path + '/' + upload, 'green', 'black'))
+            self.log.add('++ Deploying file ' + self.config['uri'].path + '/' + upload, 'ok')
           except Exception as e:
-            errors.append(str(e))
+            self.log.add(str(e), 'error')
 
 
       for delete in files['delete']:
         try:
           connection.delete_file(os.path.join(self.config['uri'].path, delete))
-          print(Shell.color('++ Deleting file ' + self.config['uri'].path + '/' + delete, 'green', 'black'))
+          self.log.add('++ Deleting file ' + self.config['uri'].path + '/' + delete, 'ok')
         except Exception as e:
-          errors.append(str(e))
+          self.log.add(str(e), 'error')
 
       connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log);
 
-      if len(errors):
-        for error in errors:
-          print(Shell.color(error, 'white', 'red'))
-
-	
-        if self.config['deploy']['maintainer']:
-          if re.match(r"[^@]+@[^@]+\.[^@]+", self.config['deploy']['maintainer']):
-            msg = '{} errors occurred while deploying project {}'.format(len(errors), self.config['uri'].hostname)
-            try:
-              server = smtplib.SMTP('localhost')
-              server.sendmail('noreply@localhost', self.config['deploy']['maintainer'], msg)
-              server.quit()
-            except socket.error as e:
-              print(Shell.color('Failed to send email to {} Reason {}'.format(self.config['deploy']['maintainer'], str(e)), 'white', 'red'))
-          else:
-            print(Shell.color('Maintainer email is set, but has wrong format!', 'white', 'red'))
-            print(Shell.color('Deploying done, but some errors occurred!', 'white', 'yellow'))
-      else:
-        print(Shell.color('Deploying done!', 'white', 'green'))
-
     else:
-      print(Shell.color('Revisions match, no deploy needed.', 'white', 'green'))
+      self.log.add('Revisions match, no deploy needed.', 'ok')
       
   def check_premisson(self, filename):
     for path, premisson in self.config['deploy']['file_rights']:
       if filename.endswith(path) or path == '*' or '*' in path and filename.startswith(path.replace('*', '')):
         return premisson
     return None
+  
+  def get_log(self):
+    return self.log
