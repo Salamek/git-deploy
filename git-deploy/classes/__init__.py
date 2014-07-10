@@ -6,3 +6,4 @@ from ftps import Ftps
 from git import Git
 from shell import Shell
 from ssh import Ssh
+from log import Log
