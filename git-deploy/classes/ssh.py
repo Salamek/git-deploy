@@ -77,10 +77,11 @@ class Ssh:
    * @param string $premisson
    * @throws Exception
   """
-  def upload_file(self, from_file, to_file, premisson = 775):
+  def upload_file(self, from_file, to_file, premisson = 664):
     self.create_path(to_file, premisson)
     self.connection.put(from_file, to_file)
-    self.connection.chmod(to_file, premisson)
+    if premisson:
+      self.connection.chmod(to_file, premisson)
     
    
   """
@@ -89,12 +90,14 @@ class Ssh:
    * @param string $string
    * @param string $premisson
   """
-  def upload_string(self, file_path, string, premisson = 775):
+  def upload_string(self, file_path, string, premisson = 664):
     self.create_path(file_path, premisson)
     f = self.connection.open(file_path, 'wb')
     f.write(string)
     f.close()
-    self.connection.chmod(file_path, premisson)
+    
+    if premisson:
+      self.connection.chmod(file_path, premisson)
 
   """
    * Deletes file on remote server
@@ -109,7 +112,7 @@ class Ssh:
    * @param type $filePath
    * @param type $premisson
   """
-  def create_path(self, file_path, premisson = 775):
+  def create_path(self, file_path, premisson = 755):
     dir_path = os.path.dirname(file_path)
     try:
       self.connection.stat(dir_path)
