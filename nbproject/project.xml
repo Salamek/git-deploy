@@ -4,7 +4,9 @@
     <configuration>
         <data xmlns="http://nbpython.dev.java.net/ns/php-project/1">
             <name>git-deploy</name>
-            <sources/>
+            <sources>
+                <root id="git-deploy.dir"/>
+            </sources>
             <tests/>
         </data>
     </configuration>
