@@ -162,8 +162,10 @@ class Git:
     
   def update(self, branch, ssh_path):
     if os.path.isdir(self.root):
-      os.system('unset GIT_DIR && cd ' + self.root + ' && git pull')
+      proc = subprocess.Popen(['unset GIT_DIR && cd ' + self.root + ' && git pull'], stdout=subprocess.PIPE, shell=True)
+      out, err = proc.communicate()
     else:
-      os.system('git clone -b ' + branch + ' ' + ssh_path + ' ' + self.root)
+      proc = subprocess.Popen(['git clone -b ' + branch + ' ' + ssh_path + ' ' + self.root], stdout=subprocess.PIPE, shell=True)
+      out, err = proc.communicate()
       
 
