@@ -78,9 +78,12 @@ class GitDeployRemote:
     #tmp is uniqe identifier of repo, this creates front for each repo
     if tmp in self.workers:
       w = self.workers[tmp]
-      w.add_work([current, branch, ssh_path, tmp])
-      if w.isAlive() == False:
-        w.start()
+      if w.isAlive():
+        w.add_work([current, branch, ssh_path, tmp])
+      else:
+        self.workers[tmp] = DeployWorker(self)
+        self.workers[tmp].add_work([current, branch, ssh_path, tmp])
+        self.workers[tmp].start()
     else:
       self.workers[tmp] = DeployWorker(self)
       self.workers[tmp].add_work([current, branch, ssh_path, tmp])
