@@ -63,7 +63,7 @@ def load_config():
 
 def main():
   config = load_config()
-  if sys.argv[1] == 'server':
+  if len(sys.argv) == 2 and sys.argv[1] == 'server':
     git_deploy_server.GitDeployServer(config['server']['port'], config['hook']['tmp_path'], config['server']['file_log'])
   elif len(sys.argv) == 1:
     #one arg means local run
