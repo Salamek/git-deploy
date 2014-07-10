@@ -77,10 +77,11 @@ class Ssh:
    * @param string $premisson
    * @throws Exception
   """
-  def upload_file(self, from_file, to_file, premisson = 0o755):
+  def upload_file(self, from_file, to_file, premisson = 775):
     self.create_path(to_file, premisson)
     self.connection.put(from_file, to_file)
     self.connection.chmod(to_file, premisson)
+    
    
   """
    * Uploads string on remote server
@@ -88,7 +89,7 @@ class Ssh:
    * @param string $string
    * @param string $premisson
   """
-  def upload_string(self, file_path, string, premisson = 0o755):
+  def upload_string(self, file_path, string, premisson = 775):
     self.create_path(file_path, premisson)
     f = self.connection.open(file_path, 'wb')
     f.write(string)
@@ -108,7 +109,7 @@ class Ssh:
    * @param type $filePath
    * @param type $premisson
   """
-  def create_path(self, file_path, premisson = 0o755):
+  def create_path(self, file_path, premisson = 775):
     dir_path = os.path.dirname(file_path)
     try:
       self.connection.stat(dir_path)
