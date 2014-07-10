@@ -6,13 +6,13 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # X-Interactive:     false
-# Short-Description: Start/stop serverror control server
+# Short-Description: Start/stop git-deploy server
 ### END INIT INFO
 
-# ServerRor daemon
+# git-deploy daemon
 # chkconfig: 345 20 80
-# description: ServerRor daemon
-# processname: ServerRor
+# description: git-deploy daemon
+# processname: git-deploy
 
 DAEMON_PATH="/usr/bin/"
 
