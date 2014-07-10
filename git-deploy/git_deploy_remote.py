@@ -49,6 +49,9 @@ class DeployWorker(threading.Thread):
 
 
 class GitDeployRemote:
+  
+  workers = {}
+  
   """
    * Constructor
    * @param string $stdin STDIN
@@ -61,23 +64,21 @@ class GitDeployRemote:
     tmp = os.path.join(tmp_path, parsed_path['hostname'], parsed_path['path'], branch)
     
     
-    workers = {}
-    
     #tmp is uniqe identifier of repo, this creates front for each repo
-    if tmp in workers:
-      w = workers[tmp]
+    if tmp in self.workers:
+      w = self.workers[tmp]
       w.add_work([current, branch, ssh_path, tmp])
       if w.isAlive() == False:
         w.start()
     else:
-      workers[tmp] = DeployWorker(self)
-      workers[tmp].add_work([current, branch, ssh_path, tmp])
-      workers[tmp].start()
+      self.workers[tmp] = DeployWorker(self)
+      self.workers[tmp].add_work([current, branch, ssh_path, tmp])
+      self.workers[tmp].start()
       
     #clean not running workers
-    for tmp in workers:
-      if workers[tmp].isAlive() == False:
-        del workers[tmp]
+    for tmp in self.workers:
+      if self.workers[tmp].isAlive() == False:
+        del self.workers[tmp]
 
   def loger(self, l):
     l.output()
