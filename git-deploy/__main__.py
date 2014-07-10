@@ -24,10 +24,47 @@ import socket
 import fileinput
 import getpass
 import os
+import ConfigParser
+
+def load_config():
+  config_file_path = '/etc/git-deploy/git-deploy.cfg'
+  if os.path.isfile(config_file_path):
+    config = ConfigParser.ConfigParser()
+    try:
+      config.read(config_file_path)
+      
+      ret = {'server': {}, 'hook': {}}
+      if config.has_option('server', 'port'):
+        ret['server']['port'] = config.getint('server', 'port')
+      else:
+        ret['server']['port'] = 7416
+        
+      if config.has_option('server', 'file_log'):
+        ret['server']['file_log'] = config.getboolean('server', 'file_log')
+      else:
+        ret['server']['file_log'] = True
+        
+      if config.has_option('hook', 'repository_path'):
+        ret['hook']['repository_path'] = config.get('hook', 'repository_path')
+      else:
+        ret['hook']['repository_path'] = '/home/git/repositories'
+        
+      if config.has_option('hook', 'tmp_path'):
+        ret['hook']['tmp_path'] = config.get('hook', 'tmp_path')
+      else:
+        ret['hook']['tmp_path'] = '/home/git/tmp'
+      
+      return ret
+    except IOError:
+      raise Exception('Failed to parse ' + config_file_path);
+  else:
+    raise Exception('Config file {} not found '.format(config_file_path))
+
 
 if __name__ == "__main__":
+  config = load_config()
   if sys.argv[1] == 'server':
-    git_deploy_server.GitDeployServer()
+    git_deploy_server.GitDeployServer(config['server']['port'], config['hook']['tmp_path'], config['server']['file_log'])
   elif len(sys.argv) == 1:
     #one arg means local run
     git_deploy.GitDeploy().get_log().output()
@@ -40,10 +77,10 @@ if __name__ == "__main__":
     if len(stdin) == 3:
       prev, current, branch = stdin
       git_user = getpass.getuser()
-      repository_path = os.path.join('/home/', git_user, '/repositories/') #FIXME GET REPO PATH FROM CONFIG
+      repository_path = os.path.join(config['hook']['repository_path'])
 
       #Build needed info
       ssh_path = git_user + '@' + socket.gethostname() + ':' + os.getcwd().replace(repository_path,'')
-      git_deploy_remote.GitDeployRemote(current, branch, ssh_path, tmp_path) #FIXME TMP PATH GET FROM CONFIG
+      git_deploy_remote.GitDeployRemote(current, branch, ssh_path, config['hook']['tmp_path'])
   
   

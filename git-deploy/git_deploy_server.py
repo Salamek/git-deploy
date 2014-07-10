@@ -26,28 +26,31 @@ from twisted.internet import reactor
 from twisted.python import log
 
 class GitDeployServerFactory(Resource):
-    def render_GET(self, request):
-      return '500 Wrong request!'
+  tmp = None
+  def __init__(self, tmp):
+    self.tmp = tmp
+  def render_GET(self, request):
+    return '500 Wrong request!'
 
-    def render_POST(self, request):
-      try:
-        decoded = json.loads(request.content.read())
-        git_deploy_remote.GitDeployRemote(decoded['after'], decoded['ref'], decoded['repository']['url'], '/home/sadam/git-deploy/tmp') #FIXME get TMP path from config
-      except ValueError as err:
-        return str(err)
+  def render_POST(self, request):
+    try:
+      decoded = json.loads(request.content.read())
+      git_deploy_remote.GitDeployRemote(decoded['after'], decoded['ref'], decoded['repository']['url'], self.tmp)
+    except ValueError as err:
+      return str(err)
 
 class GitDeployServer:
-  def __init__(self):
-    if False:
-      log.startLogging(open('serverror.log', 'w'))
+  def __init__(self, port, tmp, file_log = True):
+    if file_log:
+      log.startLogging(open('/var/log/git-deploy.log', 'w'))
     else:
       log.startLogging(sys.stdout)
 
     print ('Running on pid {}'.format(os.getpid()))
     root = Resource()
-    root.putChild("deploy.json", GitDeployServerFactory())
+    root.putChild("deploy.json", GitDeployServerFactory(tmp))
     factory = Site(root)
-    reactor.listenTCP(8880, factory) #FIXME GET IP AND PORT FROM CONFIG
+    reactor.listenTCP(port, factory)
     reactor.run()
   
   
