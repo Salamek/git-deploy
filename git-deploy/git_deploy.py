@@ -175,7 +175,7 @@ class GitDeploy:
         except Exception as e:
           self.log.add(str(e), 'error')
 
-      #connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log);
+      connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log);
       self.log.add('Deploy done!', 'ok')
     else:
       self.log.add('Revisions match, no deploy needed.', 'ok')
