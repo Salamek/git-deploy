@@ -8,8 +8,9 @@ __date__ ="$10.7.2014 0:05:45$"
 from shell import Shell
 
 class Log:
-  
-  messages = {'ok': [], 'warning': [], 'error': []}
+  messages = {}
+  def __init__(self):
+    self.messages = {'ok': [], 'warning': [], 'error': []}
   
   def add(self, message, type = 'ok'):
     if type in self.messages:
