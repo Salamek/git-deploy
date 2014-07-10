@@ -36,6 +36,7 @@ class GitDeploy:
   config_file = 'deploy.ini'
   config = {}
   revison_file = 'REVISION'
+  lock_file = 'deploy.lck'
   
   def __init__(self, config = None):
     self.log = Log()
@@ -150,6 +151,9 @@ class GitDeploy:
 
     #Revision not match, we must get changes and upload it on server
     if git_revision != revision:
+      
+      #create lock file on remote server
+      connection.upload_string(os.path.join(self.config['uri'].path, self.lock_file), git_revision_log)
       if revision and git_revision:
         self.log.add('Remote revision is {}, current revison is {}'.format(revision, git_revision), 'ok')
       else:
@@ -175,7 +179,10 @@ class GitDeploy:
         except Exception as e:
           self.log.add(str(e), 'error')
 
-      connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log);
+      #destroy lock file
+      connection.delete_file(os.path.join(self.config['uri'].path, self.lock_file))
+      #create revision file
+      connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log)
       self.log.add('Deploy done!', 'ok')
     else:
       self.log.add('Revisions match, no deploy needed.', 'ok')
@@ -183,7 +190,7 @@ class GitDeploy:
   def check_premisson(self, filename):
     for path, premisson in self.config['deploy']['file_rights']:
       if filename.endswith(path) or path == '*' or '*' in path and filename.startswith(path.replace('*', '')):
-        return premisson
+        return int(premisson)
     return None
   
   def get_log(self):
