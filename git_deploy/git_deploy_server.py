@@ -40,9 +40,9 @@ class GitDeployServerFactory(Resource):
       return str(err)
 
 class GitDeployServer:
-  def __init__(self, port, tmp, file_log = True):
+  def __init__(self, port, tmp, file_log = None):
     if file_log:
-      log.startLogging(open('/var/log/git-deploy.log', 'w'))
+      log.startLogging(open(file_log, 'w'))
     else:
       log.startLogging(sys.stdout)
 
