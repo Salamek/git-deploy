@@ -43,7 +43,7 @@ def load_config():
       if config.has_option('server', 'file_log'):
         ret['server']['file_log'] = config.get('server', 'file_log')
       else:
-        ret['server']['file_log'] = '/var/log/git-deploy.log'
+        ret['server']['file_log'] = None
         
       if config.has_option('server', 'user'):
         ret['server']['user'] = config.get'server', 'user')
