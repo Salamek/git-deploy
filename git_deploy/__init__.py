@@ -24,6 +24,7 @@ import socket
 import fileinput
 import getpass
 import os
+import pwd
 import ConfigParser
 
 def load_config():
@@ -40,9 +41,14 @@ def load_config():
         ret['server']['port'] = 7416
         
       if config.has_option('server', 'file_log'):
-        ret['server']['file_log'] = config.getboolean('server', 'file_log')
+        ret['server']['file_log'] = config.get('server', 'file_log')
       else:
-        ret['server']['file_log'] = True
+        ret['server']['file_log'] = '/var/log/git-deploy.log'
+        
+      if config.has_option('server', 'user'):
+        ret['server']['user'] = config.get'server', 'user')
+      else:
+        ret['server']['user'] = 'root'
         
       if config.has_option('hook', 'repository_path'):
         ret['hook']['repository_path'] = config.get('hook', 'repository_path')
@@ -63,6 +69,11 @@ def load_config():
 
 def main():
   config = load_config()
+  
+  #set user to run under
+  uid = pwd.getpwnam(ret['server']['user'])[2]
+  os.setuid(uid)
+  
   if len(sys.argv) == 2 and sys.argv[1] == 'server':
     git_deploy_server.GitDeployServer(config['server']['port'], config['hook']['tmp_path'], config['server']['file_log'])
   elif len(sys.argv) == 1:
