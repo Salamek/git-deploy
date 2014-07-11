@@ -16,7 +16,7 @@
 
 DAEMON_PATH="/usr/bin/"
 
-DAEMON=git-deploy server
+DAEMON="git-deploy server"
 
 NAME=git-deploy
 DESC="Git deployement tool"
