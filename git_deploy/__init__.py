@@ -71,7 +71,7 @@ def main():
   config = load_config()
   
   #set user to run under
-  uid = pwd.getpwnam(ret['server']['user'])[2]
+  uid = pwd.getpwnam(config['server']['user'])[2]
   os.setuid(uid)
   
   if len(sys.argv) == 2 and sys.argv[1] == 'server':
