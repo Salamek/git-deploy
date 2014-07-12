@@ -46,7 +46,7 @@ def load_config():
         ret['server']['file_log'] = None
         
       if config.has_option('server', 'user'):
-        ret['server']['user'] = config.get'server', 'user')
+        ret['server']['user'] = config.get('server', 'user')
       else:
         ret['server']['user'] = 'root'
         
