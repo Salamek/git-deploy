@@ -161,7 +161,7 @@ class Git:
       return None
     
   def update(self, branch, ssh_path):
-    if os.path.isdir(self.root):
+    if self.has_git(self.root):
       proc = subprocess.Popen(['unset GIT_DIR && cd ' + self.root + ' && git pull'], stdout=subprocess.PIPE, shell=True)
       out, err = proc.communicate()
     else:
