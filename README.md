@@ -17,6 +17,8 @@ Add new repository by running this command: `sudo echo "deb http://apt.salamek.c
 
 ### Archlinux:
 
+For archlinux you can install package from AUR https://aur.archlinux.org/packages/git-deploy/
+
 ### Fedora/Rhel (RPM):
 
 ## Usage
