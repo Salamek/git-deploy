@@ -7,7 +7,7 @@ __date__ ="$8.7.2014 20:26:41$"
 
 setup(
   name="git-deploy",
-  version="2.0.4",
+  version="2.0.5",
   author=__author__,
   author_email="adam.schubert@sg1-game.net",
   description="Git-deploy is tool written in python to allow fast and easy deployments on remote servers wia S/FTP, SSH/SCP",
