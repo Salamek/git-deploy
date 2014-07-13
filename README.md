@@ -13,6 +13,8 @@ git-deploy supports deployment over SSH and FTP/S
 
 ### Debian/Ubuntu (DEB):
 
+Add new repository by running this command: `sudo echo "deb http://apt.salamek.cz debian/" >> /etc/apt/sources.list` then just run `sudo apt-get update && sudo apt-get install git-deploy`
+
 ### Archlinux:
 
 ### Fedora/Rhel (RPM):
