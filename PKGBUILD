@@ -15,7 +15,7 @@ backup=('etc/git-deploy/git-deploy.cfg')
 makedepends=()
 source=("https://github.com/Salamek/git-deploy/archive/$pkgver.tar.gz")
 noextract=()
-md5sums=('a23448753fb1d75ee4e8d3f0649e1daf')
+md5sums=('40af5871853c8decc2cce42956eb4c59')
 
 package() {
   cd "$srcdir/$pkgname-$pkgver"
