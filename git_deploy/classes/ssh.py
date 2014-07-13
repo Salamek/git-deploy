@@ -35,7 +35,7 @@ class Ssh:
     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
     
     try:
-      self.ssh.connect(host, port, user, password)
+      self.ssh.connect(host, port, user, password, None, None, 10)
     except (paramiko.SSHException, socket.error):
       raise Exception('Failed to connect to server!')
     
