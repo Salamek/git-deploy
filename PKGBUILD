@@ -20,5 +20,5 @@ md5sums=('0021d34ba6d36daa6eae75928dc46d3e')
 package() {
   cd "$srcdir/$pkgname-$pkgver"
   chmod +x ./setup.py
-  ./setup.py install --root=$pkgdir/ --optimize=1
+  ./setup-systemd.py install --root=$pkgdir/ --optimize=1
 }
