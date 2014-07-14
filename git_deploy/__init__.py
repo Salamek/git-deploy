@@ -69,12 +69,12 @@ def load_config():
 
 def main():
   config = load_config()
-  
-  #set user to run under
-  uid = pwd.getpwnam(config['server']['user'])[2]
-  os.setuid(uid)
-  
   if len(sys.argv) == 2 and sys.argv[1] == 'server':
+      
+    #set user to run under
+    uid = pwd.getpwnam(config['server']['user'])[2]
+    os.setuid(uid)
+    
     git_deploy_server.GitDeployServer(config['server']['port'], config['hook']['tmp_path'], config['server']['file_log'])
   elif len(sys.argv) == 1:
     #one arg means local run
@@ -86,6 +86,11 @@ def main():
     stdin = fileinput.input()[0].strip().split(' ')
     #stdin 3 items thats post-receive
     if len(stdin) == 3:
+      
+      #set user to run under
+      uid = pwd.getpwnam(config['server']['user'])[2]
+      os.setuid(uid)
+      
       prev, current, branch = stdin
       git_user = getpass.getuser()
       repository_path = os.path.join(config['hook']['repository_path'])
