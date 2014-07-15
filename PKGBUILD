@@ -19,6 +19,7 @@ md5sums=('40af5871853c8decc2cce42956eb4c59')
 
 package() {
   cd "$srcdir/$pkgname-$pkgver"
-  chmod +x ./setup-systemd.py
-  ./setup-systemd.py install --root=$pkgdir/ --optimize=1
+  echo "systemd" > .target
+  ./setup.py install --root=$pkgdir/ --optimize=1
+  rm .target
 }

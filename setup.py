@@ -5,6 +5,15 @@ from setuptools import setup
 __author__="Adam Schubert"
 __date__ ="$8.7.2014 20:26:41$"
 
+if 'initd' in open('.target').read():
+  data_files_dist=[
+    ('/etc/init.d', ['etc/init.d/git-deploy']), ('/etc/git-deploy', ['etc/git-deploy/git-deploy.cfg'])
+  ] 
+else:
+  data_files_dist=[
+    ('/usr/lib/systemd/system/', ['usr/lib/systemd/system/git-deploy.service']), ('/etc/git-deploy', ['etc/git-deploy/git-deploy.cfg'])
+  ]
+  
 setup(
   name="git-deploy",
   version=open('VERSION.txt').read(),
@@ -21,7 +30,5 @@ setup(
   entry_points={
     'console_scripts': ['git-deploy = git_deploy:main']
   },
-  data_files=[
-    ('/usr/lib/systemd/system/', ['usr/lib/systemd/system/git-deploy.service']), ('/etc/git-deploy', ['etc/git-deploy/git-deploy.cfg'])
-  ]
+  data_files=data_files_dist
 )

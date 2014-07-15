@@ -1,3 +1,5 @@
 #!/bin/bash
 rm -rf "./deb_dist"
-python setup-init.py --command-packages=stdeb.command bdist_deb
+echo "initd" > .target
+python setup.py --command-packages=stdeb.command bdist_deb
+rm .target
