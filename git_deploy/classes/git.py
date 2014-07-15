@@ -148,7 +148,7 @@ class Git:
   
   @staticmethod
   def git_url_parse(url):
-    if re.match(r'((git|ssh|http(s)?)|(git@[\w.]+))(:(//)?)([\w.@\:/-~]+)(.git)(/)?', url):
+    if re.match(r'((git|ssh|http(s)?)|(git@[\w.]+))(:(//)?)([\w.@\-\:/-~]+)(.git)(/)?', url):
       ret = {}
       
       netloc, path = url.split(':')
