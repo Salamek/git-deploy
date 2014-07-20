@@ -90,7 +90,7 @@ class GitDeployRemote:
       self.workers[tmp].start()
       
     #clean not running workers
-    for tmp in self.workers:
+    for tmp in self.workers.keys():
       if self.workers[tmp].isAlive() == False:
         del self.workers[tmp]
 
