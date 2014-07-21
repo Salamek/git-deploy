@@ -67,14 +67,23 @@ def load_config():
     raise Exception('Config file {} not found '.format(config_file_path))
 
 
+def set_user(username):
+  #set user to run under
+  id = pwd.getpwnam(config['server']['user'])
+
+  os.environ['HOME']  = id.pw_dir
+  os.environ['LOGNAME']  = id.pw_name
+  os.environ['USER']  = id.pw_name
+
+  os.setgid(id.pw_gid)
+  os.setuid(id.pw_uid)
+
+
 def main():
   config = load_config()
   if len(sys.argv) == 2 and sys.argv[1] == 'server':
-      
-    #set user to run under
-    uid = pwd.getpwnam(config['server']['user'])[2]
-    os.setuid(uid)
-    
+    set_user(config['server']['user'])
+
     git_deploy_server.GitDeployServer(config['server']['port'], config['hook']['tmp_path'], config['server']['file_log'])
   elif len(sys.argv) == 1:
     #one arg means local run
@@ -87,9 +96,7 @@ def main():
     #stdin 3 items thats post-receive
     if len(stdin) == 3:
       
-      #set user to run under
-      uid = pwd.getpwnam(config['server']['user'])[2]
-      os.setuid(uid)
+      set_user(config['server']['user'])
       
       prev, current, branch = stdin
       git_user = getpass.getuser()
