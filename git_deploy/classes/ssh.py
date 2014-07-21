@@ -82,7 +82,7 @@ class Ssh:
     self.create_path(to_file, premisson)
     self.connection.put(from_file, to_file)
     if premisson:
-      self.connection.chmod(to_file, premisson)
+      self.connection.chmod(to_file, int('0' + str(premisson), 8))
     
    
   """
@@ -98,7 +98,7 @@ class Ssh:
     f.close()
     
     if premisson:
-      self.connection.chmod(file_path, premisson)
+      self.connection.chmod(file_path, int('0' + str(premisson), 8))
 
   """
    * Deletes file on remote server
@@ -120,7 +120,7 @@ class Ssh:
     except IOError as e:
       if(e.errno == errno.ENOENT):
         try:
-          self.connection.mkdir(dir_path, premisson)
+          self.connection.mkdir(dir_path, int('0' + str(premisson), 8))
         except IOError as e:
           raise Exception('Failed to create path {} on server Reason: {}'.format(dir_path, str(e)))
       else:
