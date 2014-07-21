@@ -32,7 +32,8 @@ class Ssh:
     self.root = root
     
     self.ssh = paramiko.SSHClient() 
-    self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
+    self.ssh.load_system_host_keys()
+    self.ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
     
     try:
       self.ssh.connect(host, port, user, password, None, None, 10)
