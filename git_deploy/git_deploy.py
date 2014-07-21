@@ -153,7 +153,11 @@ class GitDeploy:
     if git_revision != revision:
       
       #create lock file on remote server
-      connection.upload_string(os.path.join(self.config['uri'].path, self.lock_file), git_revision_log)
+      try:
+        connection.upload_string(os.path.join(self.config['uri'].path, self.lock_file), git_revision_log)
+      except Exception as err:
+        self.log.add(str(err), 'error')
+        
       if revision and git_revision:
         self.log.add('Remote revision is {}, current revison is {}'.format(revision, git_revision), 'ok')
       else:
@@ -179,10 +183,18 @@ class GitDeploy:
         except Exception as e:
           self.log.add(str(e), 'error')
 
-      #destroy lock file
-      connection.delete_file(os.path.join(self.config['uri'].path, self.lock_file))
-      #create revision file
-      connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log)
+      try:
+        #destroy lock file
+        connection.delete_file(os.path.join(self.config['uri'].path, self.lock_file))
+      except Exception as e:
+        load.add(str(e), 'error')
+        
+      try:
+        #create revision file
+        connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log)
+      except Exception as e:
+        self.log.add(str(e), 'error')
+        
       self.log.add('Deploy done!', 'ok')
     else:
       self.log.add('Revisions match, no deploy needed.', 'ok')
