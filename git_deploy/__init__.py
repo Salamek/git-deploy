@@ -69,7 +69,7 @@ def load_config():
 
 def set_user(username):
   #set user to run under
-  id = pwd.getpwnam(config['server']['user'])
+  id = pwd.getpwnam(username)
 
   os.environ['HOME']  = id.pw_dir
   os.environ['LOGNAME']  = id.pw_name
