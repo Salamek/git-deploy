@@ -113,16 +113,29 @@ class Ssh:
    * @param type $filePath
    * @param type $premisson
   """
-  def create_path(self, file_path, premisson = 755):
+  def create_path(self, file_path, premisson = 777):
     dir_path = os.path.dirname(file_path)
+    self.mkdir_p(dir_path)
+
+  """
+   * Helper function to create dirs r
+  """
+  def mkdir_p(self, remote_directory):
+    if remote_directory == '/':
+      # absolute path so change directory to root
+      self.connection.chdir('/')
+      return
+    if remote_directory == '':
+      # top-level relative directory must exist
+      return
+    remote_dirname, basename = os.path.split(remote_directory)
+    self.mkdir_p(os.path.dirname(remote_directory))  # make parent directories
     try:
-      self.connection.stat(dir_path)
-    except IOError as e:
-      if(e.errno == errno.ENOENT):
-        try:
-          self.connection.mkdir(dir_path, int('0' + str(premisson), 8))
-        except IOError as e:
-          raise Exception('Failed to create path {} on server Reason: {}'.format(dir_path, str(e)))
-      else:
-        raise Exception('Failed to stat path {} on server Reason: {}'.format(dir_path, str(e)))
-  
+      self.connection.chdir(basename) # sub-directory exists
+    except IOError:
+      try:
+        self.connection.mkdir(basename) # sub-directory missing, so created it
+        self.connection.chdir(basename)
+      except IOError as e:
+        raise Exception('Failed to create path {} on server Reason: {}'.format(basename, str(e)))
+
