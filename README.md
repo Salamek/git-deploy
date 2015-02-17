@@ -5,8 +5,6 @@
 git-deploy is a deployment tool to allow for quick and easy deployments based on
 the changes in a git repository, from git server on `git push` command, by adding as remote hook in github/gitlab or manualy from git repo :
 
-![Animation of active deploy](https://gist.github.com/Salamek/6412607/raw/a8942ce9a0b6d638a70caf9618e97cd8b31f87b1/anim.gif)
-
 git-deploy supports deployment over SSH and FTP/S
 
 ## Installation
