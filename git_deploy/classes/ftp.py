@@ -131,7 +131,11 @@ class Ftp:
    * @throws Exception
   """
   def create_path(self, file_path, premisson = None):
-    dirs = os.path.dirname(file_path).replace(self.root, '').split('/')
+    dirs = os.path.dirname(file_path)
+    if self.root != '/':
+      dirs = dirs.replace(self.root, '')
+    
+    dirs = dirs.split('/')
     dir_path = self.root
     status = True
     for dir in dirs:
