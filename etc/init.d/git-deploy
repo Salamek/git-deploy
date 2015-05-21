@@ -22,8 +22,8 @@ DAEMON="git-deploy server"
 
 NAME=git-deploy
 DESC="Git deployement tool"
-PIDFILE=/var/run/$DAEMON.pid
-SCRIPTNAME=/etc/init.d/$DAEMON
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
 
 case "$1" in
 start)
