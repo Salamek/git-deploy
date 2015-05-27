@@ -20,6 +20,7 @@ __date__ ="$6.7.2014 2:01:34$"
 import os
 import ConfigParser
 import urlparse
+import config_reader
 
 from classes import Git
 from classes import Ftp
@@ -33,7 +34,8 @@ class GitDeploy:
   log = None
   current_revision = None
   git = None
-  config_file = 'deploy.ini'
+  config_file_search = ['deploy.py', 'deploy.ini']
+  config_file = None
   config = {}
   revison_file = 'REVISION'
   lock_file = 'deploy.lck'
@@ -66,43 +68,17 @@ class GitDeploy:
   
   
   def parse_config(self):
-    config_file_path = os.path.join(self.root, self.config_file)
-
-    if os.path.isfile(config_file_path):
-      config = ConfigParser.ConfigParser()
-      try:
-        config.read(config_file_path)
-
-        #parse config and set it into variable
-        self.config['deploy'] = {}
-        if config.has_option('deploy', 'target'):
-          self.config['deploy']['target'] = config.get('deploy', 'target')
-        else:
-          raise Exception('No taget option found in config {}'.format(config_file_path))
-        
-        if config.has_option('deploy', 'deploy'):
-          self.config['deploy']['deploy'] = config.getboolean('deploy', 'deploy')
-        else:
-          raise Exception('No deploy option found in config {}'.format(config_file_path))
-        
-        if config.has_option('deploy', 'maintainer'):
-          self.config['deploy']['maintainer'] = config.get('deploy', 'maintainer')
-        else:
-          self.config['deploy']['maintainer'] = ''
-        
-        if config.has_section('file_rights'):
-          self.config['deploy']['file_rights'] = config.items('file_rights')
-        else:
-          self.config['deploy']['file_rights'] = {}
-
-        self.config['uri'] = urlparse.urlparse(self.config['deploy']['target'].strip("'"))
-
-        if self.config['uri'] == None or self.config['uri'].hostname == None:
-          raise Exception('Failed to prase URI in config file')
-      except IOError:
-        raise Exception('Failed to parse ' + config_file_path);
-    else:
-      raise Exception(config_file_path + ' not found!, skiping deploy...')
+    
+    for conf_file in self.config_file_search:
+      config_file_path = os.path.join(self.root, conf_file)
+      if os.path.isfile(config_file_path):
+        break
+    
+    config = config_reader.configReader(config_file_path)
+    if config_file_path.find('.py') == -1:
+      config.migrate_ini2py()
+    
+    self.config = config.get()
       
       
   def deploy(self):

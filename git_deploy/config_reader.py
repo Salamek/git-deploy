@@ -118,23 +118,23 @@ class configReader(object):
       py_content.append('  \'server\':{')
       py_content.append('')
       py_content.append('    # Port to run on')
-      py_content.append('    \'port\': 7416,')
+      py_content.append('    \'port\': ' + str(self.config['server']['port']) + ',')
       py_content.append('')
       py_content.append('    # Where to store logs')
-      py_content.append('    \'file_log\': \'/home/git/git-deploy.log\', ')
+      py_content.append('    \'file_log\': \'' + self.config['server']['file_log'] + '\', ')
       py_content.append('')
       py_content.append('    # User to run under')
-      py_content.append('    \'user\': \'git\'')
+      py_content.append('    \'user\': \'' + self.config['server']['user'] + '\'')
       py_content.append('  },')
       py_content.append('')
       py_content.append('  # ')
       py_content.append('  \'hook\': {')
       py_content.append('')
       py_content.append('    # Path to temp dir')
-      py_content.append('    \'tmp_path\': \'/home/git/tmp\',')
+      py_content.append('    \'tmp_path\': \'' + self.config['hook']['tmp_path'] + '\',')
       py_content.append('')
       py_content.append('    # Path to git repositories')
-      py_content.append('    \'repository_path\': \'/home/git/repositories\'')
+      py_content.append('    \'repository_path\': \'' + self.config['hook']['repository_path'] + '\'')
       py_content.append('  }')
       py_content.append('}')
 
@@ -144,39 +144,30 @@ class configReader(object):
       py_content.append('  \'targets\': [')
       py_content.append('    {')
       py_content.append('      # Target uri')
-      py_content.append('      \'uri\': \'sftp://user:password@example.com/path/to/deploy\',')
+      py_content.append('      \'uri\': \'' + self.config['deploy']['target'] + '\',')
       py_content.append('')
       py_content.append('      # Web hook to run remote hook after deploy is done, optional')
-      py_content.append('      \'web_hook\': \'http://example.com/your_hook\',')
+      py_content.append('      \'web_hook\': None,')
       py_content.append('')
       py_content.append('      # Enables disables this target')
-      py_content.append('      \'enabled\': True')
+      py_content.append('      \'enabled\': ' + 'True' if self.config['deploy']['target'] else 'False' )
       py_content.append('    }')
       py_content.append('  ],')
       py_content.append('  # Set special file rights to deployed files, relative to GIT root')
       py_content.append('  \'file_rights\': {')
-      py_content.append('    \'dir/file/*\': 777,')
-      py_content.append('    \'dir/file\': 775')
+      
+      rights = []
+      for path, right in self.config['deploy']['file_rights']:
+        rights.append('    \'' + path + '\': ' + right)
+      py_content.append(", \n".join(rights)) 
       py_content.append('  }')
       py_content.append('}')
 
-    print(' '.join(py_content))
+    # filename is differend git-deploy.cfg -> config.py
+    if class_name == 'git-deploy':
+      file_name = self.config_file.replace('git-deploy.cfg', 'config.py')
+    else:
+      file_name = self.config_file
       
-"""
-rdp = configReader('/home/sadam/git-deploy/deploy.py')
-rdp.migrate_ini2py()
-print(rdp.get())
-    
-
-rcp = configReader('/home/sadam/git-deploy/etc/git-deploy/config.py')
-rcp.migrate_ini2py()
-print(rcp.get())
-"""
-
-rdi = configReader('/home/sadam/git-deploy/deploy.ini')
-rdi.migrate_ini2py()
-#print(rdi.get())
-    
-#rci = configReader('/home/sadam/git-deploy/etc/git-deploy/git-deploy.cfg')
-#rci.migrate_ini2py()
-#print(rci.get())
+    with open(file_name, "w") as new_config_file:
+      new_config_file.write("\n".join(py_content))
