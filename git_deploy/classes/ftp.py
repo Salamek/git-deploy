@@ -88,7 +88,7 @@ class Ftp:
   def upload_file(self, from_file, to_file, premisson = None):
     self.create_path(to_file, premisson)
     try:
-      self.connection.storlines('STOR {}'.format(to_file), open(from_file, 'r'))
+      self.connection.storbinary('STOR {}'.format(to_file), open(from_file, 'r'))
     except ftplib.all_errors as e:
       raise Exception('Failed to copy file {} to {} on remote server'.format(from_file, to_file));
 
