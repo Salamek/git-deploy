@@ -58,8 +58,9 @@ class GitDeploy:
       self.root = self.git.root
       try:
         self.parse_config()
-        if self.config['deploy']['deploy'] == True:
-          self.deploy()
+        for target in self.config['targets']:
+          if target['enabled'] == True:
+            self.deploy(target)
       except Exception as e:
         raise e
     except Exception as e:
@@ -70,6 +71,7 @@ class GitDeploy:
   def parse_config(self):
     
     for conf_file in self.config_file_search:
+      self.config_file = conf_file
       config_file_path = os.path.join(self.root, conf_file)
       if os.path.isfile(config_file_path):
         break
@@ -82,33 +84,37 @@ class GitDeploy:
     self.config = config.get()
       
       
-  def deploy(self):
+  def deploy(self, target_config):
+    # Parse uri
+    target_config['uri_parsed'] = urlparse.urlparse(target_config['uri'])
+    
+    
     connection = None
-    if self.config['uri'].password:
-      password = self.config['uri'].password
+    if target_config['uri_parsed'].password:
+      password = target_config['uri_parsed'].password
     else:
       password = None
       
-    if self.config['uri'].scheme == 'sftp':
-      if self.config['uri'].port:
-        port = self.config['uri'].port
+    if target_config['uri_parsed'].scheme == 'sftp':
+      if target_config['uri_parsed'].port:
+        port = target_config['uri_parsed'].port
       else:
         port = 22
-      connection = Ssh(self.config['uri'].hostname, self.config['uri'].username, self.config['uri'].path, port, password)
+      connection = Ssh(target_config['uri_parsed'].hostname, target_config['uri_parsed'].username, target_config['uri_parsed'].path, port, password)
 
-    elif self.config['uri'].scheme == 'ftp':
-      if self.config['uri'].port:
-        port = self.config['uri'].port
+    elif target_config['uri_parsed'].scheme == 'ftp':
+      if target_config['uri_parsed'].port:
+        port = target_config['uri_parsed'].port
       else:
         port = 21
-      connection = Ftp(self.config['uri'].hostname, self.config['uri'].username, self.config['uri'].path, port, password)
+      connection = Ftp(target_config['uri_parsed'].hostname, target_config['uri_parsed'].username, target_config['uri_parsed'].path, port, password)
 
-    elif self.config['uri'].scheme == 'ftps':
-      if self.config['uri'].port:
-        port = self.config['uri'].port
+    elif target_config['uri_parsed'].scheme == 'ftps':
+      if target_config['uri_parsed'].port:
+        port = target_config['uri_parsed'].port
       else:
         port = 21
-      connection = Ftps(self.config['uri'].hostname, self.config['uri'].username, self.config['uri'].path, port, password)
+      connection = Ftps(target_config['uri_parsed'].hostname, target_config['uri_parsed'].username, target_config['uri_parsed'].path, port, password)
 
 
     git_revision = None;
@@ -122,7 +128,7 @@ class GitDeploy:
       git_revision = None;
 
     try:
-      revision = connection.read_file(os.path.join(self.config['uri'].path, self.revison_file).strip())
+      revision = connection.read_file(os.path.join(target_config['uri_parsed'].path, self.revison_file).strip())
     except Exception as e:
       revision = None;
 
@@ -131,7 +137,7 @@ class GitDeploy:
       
       #create lock file on remote server
       try:
-        connection.upload_string(os.path.join(self.config['uri'].path, self.lock_file), git_revision_log)
+        connection.upload_string(os.path.join(target_config['uri_parsed'].path, self.lock_file), git_revision_log)
       except Exception as err:
         self.log.add(str(err), 'error')
         
@@ -146,29 +152,29 @@ class GitDeploy:
       for upload in files['upload']:
         if upload.endswith(self.config_file) == False:
           try:
-            premisson = self.check_premisson(upload)
-            connection.upload_file(os.path.join(self.root, upload), os.path.join(self.config['uri'].path, upload), premisson)
-            self.log.add('++ Deploying file ' + self.config['uri'].path + '/' + upload, 'ok')
+            premisson = self.check_premisson(target_config, upload)
+            connection.upload_file(os.path.join(self.root, upload), os.path.join(target_config['uri_parsed'].path, upload), premisson)
+            self.log.add('++ Deploying file ' + target_config['uri_parsed'].path + '/' + upload, 'ok')
           except Exception as e:
             self.log.add(str(e), 'error')
 
 
       for delete in files['delete']:
         try:
-          connection.delete_file(os.path.join(self.config['uri'].path, delete))
-          self.log.add('++ Deleting file ' + self.config['uri'].path + '/' + delete, 'ok')
+          connection.delete_file(os.path.join(target_config['uri_parsed'].path, delete))
+          self.log.add('++ Deleting file ' + target_config['uri_parsed'].path + '/' + delete, 'ok')
         except Exception as e:
           self.log.add(str(e), 'error')
 
       try:
         #destroy lock file
-        connection.delete_file(os.path.join(self.config['uri'].path, self.lock_file))
+        connection.delete_file(os.path.join(target_config['uri_parsed'].path, self.lock_file))
       except Exception as e:
         load.add(str(e), 'error')
         
       try:
         #create revision file
-        connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log)
+        connection.upload_string(os.path.join(target_config['uri_parsed'].path, self.revison_file), git_revision_log)
       except Exception as e:
         self.log.add(str(e), 'error')
         
@@ -176,8 +182,8 @@ class GitDeploy:
     else:
       self.log.add('Revisions match, no deploy needed.', 'ok')
       
-  def check_premisson(self, filename):
-    for path, premisson in self.config['deploy']['file_rights']:
+  def check_premisson(self, target_config, filename):
+    for path, premisson in target_config['deploy']['file_rights']:
       if filename.endswith(path) or path == '*' or '*' in path and filename.startswith(path.replace('*', '')):
         return int(premisson)
     return None
