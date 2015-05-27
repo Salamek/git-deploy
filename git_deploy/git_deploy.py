@@ -75,8 +75,9 @@ class GitDeploy:
         break
     
     config = config_reader.configReader(config_file_path)
-    if config_file_path.find('.py') == -1:
-      config.migrate_ini2py()
+    # this conf file cannot be converted cos it is in repo
+    #if config_file_path.find('.py') == -1:
+    #  config.migrate_ini2py()
     
     self.config = config.get()
       
