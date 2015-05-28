@@ -1,120 +1,129 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en-us">
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Git-deploy : Server side and client side Git deployement tool" />
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>Git-deploy</title>
+    <meta charset="UTF-8">
+    <title>Git-deploy by Salamek</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
-
   <body>
+    <section class="page-header">
+      <h1 class="project-name">Git-deploy</h1>
+      <h2 class="project-tagline">Server side and client side Git deployement tool</h2>
+      <a href="https://github.com/Salamek/git-deploy" class="btn">View on GitHub</a>
+      <a href="https://github.com/Salamek/git-deploy/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/Salamek/git-deploy/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/Salamek/git-deploy">View on GitHub</a>
-
-          <h1 id="project_title">Git-deploy</h1>
-          <h2 id="project_tagline">Server side and client side Git deployement tool</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/Salamek/git-deploy/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/Salamek/git-deploy/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h1>
-<a name="git-deploy" class="anchor" href="#git-deploy"><span class="octicon octicon-link"></span></a>git-deploy</h1>
+    <section class="main-content">
+      <h1>
+<a id="git-deploy" class="anchor" href="#git-deploy" aria-hidden="true"><span class="octicon octicon-link"></span></a>git-deploy</h1>
 
 <h2>
-<a name="description" class="anchor" href="#description"><span class="octicon octicon-link"></span></a>Description</h2>
+<a id="description" class="anchor" href="#description" aria-hidden="true"><span class="octicon octicon-link"></span></a>Description</h2>
 
 <p>git-deploy is a deployment tool to allow for quick and easy deployments based on
-the changes in a git repository, from git server on <code>git push</code> command or manualy from client:</p>
-
-<p><img src="https://gist.github.com/Salamek/6412607/raw/a8942ce9a0b6d638a70caf9618e97cd8b31f87b1/anim.gif" alt="Animation of active deploy"></p>
+the changes in a git repository, from git server on <code>git push</code> command, by adding as remote hook in github/gitlab or manualy from git repo :</p>
 
 <p>git-deploy supports deployment over SSH and FTP/S</p>
 
 <h2>
-<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
-
-<p>git-deploy requires PHP5.3 &gt;, PHP was chosen becouse this tool was primary created for company where PHP is main
-language and use any other language would make maintance and further developement very hard for this company.</p>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
 
 <h3>
-<a name="depedencies" class="anchor" href="#depedencies"><span class="octicon octicon-link"></span></a>Depedencies</h3>
+<a id="debianubuntu-deb" class="anchor" href="#debianubuntu-deb" aria-hidden="true"><span class="octicon octicon-link"></span></a>Debian/Ubuntu (DEB):</h3>
 
-<ul>
-<li>
-<code>PECL SSL</code> for SSH support</li>
-</ul><h3>
-<a name="client" class="anchor" href="#client"><span class="octicon octicon-link"></span></a>Client</h3>
-
-<p>For deploy from client side, copy <code>git-deploy</code> into <code>/usr/bin</code> just run <code>git deploy</code> from git root directory.</p>
+<p>Add new repository by running this command: <code>sudo echo "deb http://apt.salamek.cz debian/" &gt;&gt; /etc/apt/sources.list</code> then just run <code>sudo apt-get update &amp;&amp; sudo apt-get install git-deploy</code></p>
 
 <h3>
-<a name="server" class="anchor" href="#server"><span class="octicon octicon-link"></span></a>Server</h3>
+<a id="archlinux" class="anchor" href="#archlinux" aria-hidden="true"><span class="octicon octicon-link"></span></a>Archlinux:</h3>
 
-<p>For server deployment proceed as for client and simlink <code>/usr/bin/git-deploy</code> AS <code>post-receive</code> in hooks directory, this GIT server implementations are supported and tested:</p>
+<p>For archlinux you can install package from AUR <a href="https://aur.archlinux.org/packages/git-deploy/">https://aur.archlinux.org/packages/git-deploy/</a></p>
 
-<ul>
-<li>
-<a href="http://gitlab.org/">Gitlab</a> </li>
-</ul><h2>
-<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+<h3>
+<a id="fedorarhel-rpm" class="anchor" href="#fedorarhel-rpm" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fedora/Rhel (RPM):</h3>
 
-<p>In the root directory of your source code, create a <code>deploy.ini</code> file.</p>
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<h3>
+<a id="manual-run" class="anchor" href="#manual-run" aria-hidden="true"><span class="octicon octicon-link"></span></a>Manual run</h3>
+
+<p>Just run <code>git-deploy</code> in your git repo root</p>
+
+<h3>
+<a id="on-push-as-post-receive" class="anchor" href="#on-push-as-post-receive" aria-hidden="true"><span class="octicon octicon-link"></span></a>On push as <code>post-receive</code>
+</h3>
+
+<p>Just simlink <code>/usr/bin/git-deploy</code> AS <code>post-receive</code> in hooks dir in repo you want to deploy</p>
+
+<h3>
+<a id="on-push-using-github-or-gitlab" class="anchor" href="#on-push-using-github-or-gitlab" aria-hidden="true"><span class="octicon octicon-link"></span></a>On push using GitHub or GitLab</h3>
+
+<p>You must run git-deploy as daemon, first please edit file in <code>/etc/git-deploy/config.py</code> (git-deploy.cfg is deprecated and will be migrated to new version) and make it suits your needs (config values should be Self-explanatory)</p>
+
+<p>Then just start <code>git-deploy</code> service and add it to your init if you want (for autostart on boot)</p>
+
+<h4>
+<a id="github" class="anchor" href="#github" aria-hidden="true"><span class="octicon octicon-link"></span></a>GitHub</h4>
+
+<p>To deploy on <code>git push</code> to GitHub repo add a new webhook (Repo detail-&gt;Settings-&gt;Webhooks &amp; Service-&gt;Add webhook) with this format of url : <code>http://[servername]:[port]/deploy.json</code> triggered on push</p>
+
+<h4>
+<a id="gitlab" class="anchor" href="#gitlab" aria-hidden="true"><span class="octicon octicon-link"></span></a>GitLab</h4>
+
+<p>It's same as GitHub ;-)</p>
+
+<h2>
+<a id="config-file-in-deployed-repo" class="anchor" href="#config-file-in-deployed-repo" aria-hidden="true"><span class="octicon octicon-link"></span></a>Config file in deployed repo</h2>
+
+<p>In the root directory of your source code, create a <code>deploy.py</code> file (deploy.ini is deprecated and its support will be removed in next release).</p>
 
 <p>Here is a sample code for FTP acces (port can be omitted):</p>
 
-<pre><code>;target configuration
-[deploy]    
-;;protocols can be sftp for SSH (SCP), ftp or ftps for FTP or secure FTP
-target = 'ftp://user:password@example.com:21/path/to/deploy'
-;or private key auth over SSH :
-;target = 'sftp://user@example.com:22/path/to/deploy'
-;;deploy a project or not
-deploy = true
-;Optional, email of maintainer to recieve info about deploy errors
-maintainer = adam.schubert@example.com
-;Optional, use this to trigger remote host on remote server, eg for cache flushing
-;remote_hook = http://www.example.com
+<pre><code>CONFIG = {
+# Configure target or multiple targets
+  'targets': [
+    {
+      # Target uri, supported protocols are sftp, ftp, ftps format is standard URI
+      'uri': 'ftp://user:password@example.com/',
+
+      # Web hook to run remote hook after deploy is done, optional
+      'web_hook': 'http://example.com/your_hook',
+
+      # Enables disables this target
+      'enabled': True
+    }
+  ],
+  # Set special file rights to deployed files, relative to GIT root
+  'file_rights': {
+    'dir/file/*': 777,
+    'dir/file': 775
+  }
+}
 </code></pre>
 
-<p>;Optional, Special rights for files relative to git root
-[file_rights]
-dir/file/* = 777
-dir/file = 775</p>
-
 <h2>
-<a name="how-it-works" class="anchor" href="#how-it-works"><span class="octicon octicon-link"></span></a>How It Works</h2>
+<a id="how-it-works" class="anchor" href="#how-it-works" aria-hidden="true"><span class="octicon octicon-link"></span></a>How It Works</h2>
 
 <p><code>git-deploy</code> stores file called <code>REVISION</code> on your server inside the root path to your application.
 This file stores the current revision of your application residing on your server.</p>
 
 <p>When you run a <code>git deploy</code>, <code>git-deploy</code> downloads the <code>REVISION</code> file, and checks to see what
 files are different between revisions and either upload the changed files or delete them from the server.</p>
-      </section>
-    </div>
 
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Git-deploy maintained by <a href="https://github.com/Salamek">Salamek</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/Salamek/git-deploy">Git-deploy</a> is maintained by <a href="https://github.com/Salamek">Salamek</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
       </footer>
-    </div>
 
-              <script type="text/javascript">
+    </section>
+
+            <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
           </script>
@@ -125,6 +134,6 @@ files are different between revisions and either upload the changed files or del
             } catch(err) {}
           </script>
 
-
   </body>
 </html>
+
