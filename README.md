@@ -31,7 +31,7 @@ Just simlink `/usr/bin/git-deploy` AS `post-receive` in hooks dir in repo you wa
 
 ### On push using GitHub or GitLab
 
-You must run git-deploy as daemon, first please edit file in `/etc/git-deploy/git-deploy.cfg` and make it suits your needs (config values should be Self-explanatory)
+You must run git-deploy as daemon, first please edit file in `/etc/git-deploy/config.py` (git-deploy.cfg is deprecated and will be migrated to new version) and make it suits your needs (config values should be Self-explanatory)
 
 Then just start `git-deploy` service and add it to your init if you want (for autostart on boot)
 
@@ -46,22 +46,30 @@ It's same as GitHub ;-)
 
 ## Config file in deployed repo
 
-In the root directory of your source code, create a <code>deploy.ini</code> file.
+In the root directory of your source code, create a <code>deploy.py</code> file (deploy.ini is deprecated and its support will be removed in next release).
 
 Here is a sample code for FTP acces (port can be omitted):
 
-    ;target configuration
-    [deploy]    
-    ;;protocols can be sftp for SSH (SCP), ftp or ftps for FTP or secure FTP
-    target = ftp://user:password@example.com:21/path/to/deploy
-    ;or private key auth over SSH :
-    ;target = sftp://user@example.com:22/path/to/deploy
-    ;;deploy a project or not
-    deploy = true
-    ;Optional, Special rights for files relative to git root
-    [file_rights]
-    dir/file/* = 777
-    dir/file = 775
+    CONFIG = {
+    # Configure target or multiple targets
+      'targets': [
+        {
+          # Target uri, supported protocols are sftp, ftp, ftps format is standard URI
+          'uri': 'ftp://user:password@example.com/',
+
+          # Web hook to run remote hook after deploy is done, optional
+          'web_hook': 'http://example.com/your_hook',
+
+          # Enables disables this target
+          'enabled': True
+        }
+      ],
+      # Set special file rights to deployed files, relative to GIT root
+      'file_rights': {
+        'dir/file/*': 777,
+        'dir/file': 775
+      }
+    }
 
 ## How It Works
 
