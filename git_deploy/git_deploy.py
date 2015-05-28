@@ -21,6 +21,7 @@ import os
 import ConfigParser
 import urlparse
 import config_reader
+import json
 
 from classes import Git
 from classes import Ftp
@@ -178,9 +179,21 @@ class GitDeploy:
       except Exception as e:
         self.log.add(str(e), 'error')
         
+      if target_config['web_hook']:
+        import urllib2
+        try:
+          data = json.dumps({'errors': len(self.log.get('error')), 'warnings': len(self.log.get('warning'))})
+          req = urllib2.Request(target_config['web_hook'], data, {'Content-Type': 'application/json'})
+          f = urllib2.urlopen(req)
+          response = f.read()
+          f.close()
+        except:
+          self.log.add('Calling remote hook failed', 'warning')
+        
       self.log.add('Deploy done!', 'ok')
     else:
       self.log.add('Revisions match, no deploy needed.', 'ok')
+      
       
   def check_premisson(self, filename):
     for path, premisson in self.config['file_rights'].iteritems():
