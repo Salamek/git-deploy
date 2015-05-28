@@ -20,37 +20,41 @@ import sys
 import os
 import json
 import git_deploy_remote
-from twisted.web.server import Site
-from twisted.web.resource import Resource
-from twisted.internet import reactor
-from twisted.python import log
-
-class GitDeployServerFactory(Resource):
-  tmp = None
-  def __init__(self, tmp):
-    self.tmp = tmp
-  def render_GET(self, request):
-    return '500 Wrong request!'
-
-  def render_POST(self, request):
-    try:
-      decoded = json.loads(request.content.read())
-      git_deploy_remote.GitDeployRemote(decoded['after'], decoded['ref'], decoded['repository']['url'], self.tmp)
-    except ValueError as err:
-      return str(err)
+from flask import Flask, request, jsonify, render_template
 
 class GitDeployServer:
+  app = Flask(__name__)
+  tmp = None
   def __init__(self, port, tmp, file_log = None):
-    if file_log:
-      log.startLogging(open(file_log, 'w'))
-    else:
-      log.startLogging(sys.stdout)
+    self.tmp = tmp
+    
+    self.app.run(debug = False, host='0.0.0.0', port=port)
+    if not self.app.debug and file_log != None:
+        import logging
+        from logging.handlers import RotatingFileHandler
+        file_handler = RotatingFileHandler(file_log)
+        file_handler.setLevel(logging.WARNING)
+        self.app.logger.addHandler(file_handler)
 
-    print ('Running on pid {}'.format(os.getpid()))
-    root = Resource()
-    root.putChild("deploy.json", GitDeployServerFactory(tmp))
-    factory = Site(root)
-    reactor.listenTCP(port, factory)
-    reactor.run()
+  @app.errorhandler(404)
+  def not_found(error):
+    return jsonify( { 'message': str(error) } ), 404
+    
+    
+    
+  @app.route("/", methods = ['GET'])
+  def log():
+    return jsonify({'message': 'Hi there! Here will be something cool in the feature!'}), 200
+
+  @app.route("/deploy.json", methods = ['POST'])
+  def deploy():
+    if request.json == None:
+      return jsonify({'message': 'I eat only JSON... bark, bark!'}), 400
+  
+    try:
+      git_deploy_remote.GitDeployRemote(request.json['after'], request.json['ref'], request.json['repository']['url'], self.tmp)
+      return jsonify({'message': 'ok'}), 200
+    except Exception as e:
+      return jsonify({'message': str(e)}), 500
   
   
