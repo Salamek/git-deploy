@@ -196,10 +196,11 @@ class GitDeploy:
       
       
   def check_premisson(self, filename):
-    for path, premisson in self.config['file_rights'].iteritems():
-      if filename.endswith(path) or path == '*' or '*' in path and filename.startswith(path.replace('*', '')):
-        return int(premisson)
-    return None
+    if 'file_rights' in self.config:
+      for path, premisson in self.config['file_rights'].iteritems():
+        if filename.endswith(path) or path == '*' or '*' in path and filename.startswith(path.replace('*', '')):
+          return int(premisson)
+      return None
   
   def get_log(self):
     return self.log
