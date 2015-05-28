@@ -20,6 +20,7 @@ __date__ ="$6.7.2014 2:01:34$"
 import os
 import ConfigParser
 import urlparse
+import config_reader
 
 from classes import Git
 from classes import Ftp
@@ -33,7 +34,8 @@ class GitDeploy:
   log = None
   current_revision = None
   git = None
-  config_file = 'deploy.ini'
+  config_file_search = ['deploy.py', 'deploy.ini']
+  config_file = None
   config = {}
   revison_file = 'REVISION'
   lock_file = 'deploy.lck'
@@ -56,8 +58,9 @@ class GitDeploy:
       self.root = self.git.root
       try:
         self.parse_config()
-        if self.config['deploy']['deploy'] == True:
-          self.deploy()
+        for target in self.config['targets']:
+          if target['enabled'] == True:
+            self.deploy(target)
       except Exception as e:
         raise e
     except Exception as e:
@@ -66,72 +69,52 @@ class GitDeploy:
   
   
   def parse_config(self):
-    config_file_path = os.path.join(self.root, self.config_file)
-
-    if os.path.isfile(config_file_path):
-      config = ConfigParser.ConfigParser()
-      try:
-        config.read(config_file_path)
-
-        #parse config and set it into variable
-        self.config['deploy'] = {}
-        if config.has_option('deploy', 'target'):
-          self.config['deploy']['target'] = config.get('deploy', 'target')
-        else:
-          raise Exception('No taget option found in config {}'.format(config_file_path))
-        
-        if config.has_option('deploy', 'deploy'):
-          self.config['deploy']['deploy'] = config.getboolean('deploy', 'deploy')
-        else:
-          raise Exception('No deploy option found in config {}'.format(config_file_path))
-        
-        if config.has_option('deploy', 'maintainer'):
-          self.config['deploy']['maintainer'] = config.get('deploy', 'maintainer')
-        else:
-          self.config['deploy']['maintainer'] = ''
-        
-        if config.has_section('file_rights'):
-          self.config['deploy']['file_rights'] = config.items('file_rights')
-        else:
-          self.config['deploy']['file_rights'] = {}
-
-        self.config['uri'] = urlparse.urlparse(self.config['deploy']['target'].strip("'"))
-
-        if self.config['uri'] == None or self.config['uri'].hostname == None:
-          raise Exception('Failed to prase URI in config file')
-      except IOError:
-        raise Exception('Failed to parse ' + config_file_path);
-    else:
-      raise Exception(config_file_path + ' not found!, skiping deploy...')
+    
+    for conf_file in self.config_file_search:
+      self.config_file = conf_file
+      config_file_path = os.path.join(self.root, conf_file)
+      if os.path.isfile(config_file_path):
+        break
+    
+    config = config_reader.configReader(config_file_path)
+    # this conf file cannot be converted cos it is in repo
+    #if config_file_path.find('.py') == -1:
+    #  config.migrate_ini2py()
+    
+    self.config = config.get()
       
       
-  def deploy(self):
+  def deploy(self, target_config):
+    # Parse uri
+    target_config['uri_parsed'] = urlparse.urlparse(target_config['uri'])
+    
+    
     connection = None
-    if self.config['uri'].password:
-      password = self.config['uri'].password
+    if target_config['uri_parsed'].password:
+      password = target_config['uri_parsed'].password
     else:
       password = None
       
-    if self.config['uri'].scheme == 'sftp':
-      if self.config['uri'].port:
-        port = self.config['uri'].port
+    if target_config['uri_parsed'].scheme == 'sftp':
+      if target_config['uri_parsed'].port:
+        port = target_config['uri_parsed'].port
       else:
         port = 22
-      connection = Ssh(self.config['uri'].hostname, self.config['uri'].username, self.config['uri'].path, port, password)
+      connection = Ssh(target_config['uri_parsed'].hostname, target_config['uri_parsed'].username, target_config['uri_parsed'].path, port, password)
 
-    elif self.config['uri'].scheme == 'ftp':
-      if self.config['uri'].port:
-        port = self.config['uri'].port
+    elif target_config['uri_parsed'].scheme == 'ftp':
+      if target_config['uri_parsed'].port:
+        port = target_config['uri_parsed'].port
       else:
         port = 21
-      connection = Ftp(self.config['uri'].hostname, self.config['uri'].username, self.config['uri'].path, port, password)
+      connection = Ftp(target_config['uri_parsed'].hostname, target_config['uri_parsed'].username, target_config['uri_parsed'].path, port, password)
 
-    elif self.config['uri'].scheme == 'ftps':
-      if self.config['uri'].port:
-        port = self.config['uri'].port
+    elif target_config['uri_parsed'].scheme == 'ftps':
+      if target_config['uri_parsed'].port:
+        port = target_config['uri_parsed'].port
       else:
         port = 21
-      connection = Ftps(self.config['uri'].hostname, self.config['uri'].username, self.config['uri'].path, port, password)
+      connection = Ftps(target_config['uri_parsed'].hostname, target_config['uri_parsed'].username, target_config['uri_parsed'].path, port, password)
 
 
     git_revision = None;
@@ -145,7 +128,7 @@ class GitDeploy:
       git_revision = None;
 
     try:
-      revision = connection.read_file(os.path.join(self.config['uri'].path, self.revison_file).strip())
+      revision = connection.read_file(os.path.join(target_config['uri_parsed'].path, self.revison_file).strip())
     except Exception as e:
       revision = None;
 
@@ -154,7 +137,7 @@ class GitDeploy:
       
       #create lock file on remote server
       try:
-        connection.upload_string(os.path.join(self.config['uri'].path, self.lock_file), git_revision_log)
+        connection.upload_string(os.path.join(target_config['uri_parsed'].path, self.lock_file), git_revision_log)
       except Exception as err:
         self.log.add(str(err), 'error')
         
@@ -170,28 +153,28 @@ class GitDeploy:
         if upload.endswith(self.config_file) == False:
           try:
             premisson = self.check_premisson(upload)
-            connection.upload_file(os.path.join(self.root, upload), os.path.join(self.config['uri'].path, upload), premisson)
-            self.log.add('++ Deploying file ' + self.config['uri'].path + '/' + upload, 'ok')
+            connection.upload_file(os.path.join(self.root, upload), os.path.join(target_config['uri_parsed'].path, upload), premisson)
+            self.log.add('++ Deploying file ' + os.path.join(target_config['uri_parsed'].path, upload), 'ok')
           except Exception as e:
             self.log.add(str(e), 'error')
 
 
       for delete in files['delete']:
         try:
-          connection.delete_file(os.path.join(self.config['uri'].path, delete))
-          self.log.add('++ Deleting file ' + self.config['uri'].path + '/' + delete, 'ok')
+          connection.delete_file(os.path.join(target_config['uri_parsed'].path, delete))
+          self.log.add('++ Deleting file ' + os.path.join(target_config['uri_parsed'].path, delete), 'ok')
         except Exception as e:
           self.log.add(str(e), 'error')
 
       try:
         #destroy lock file
-        connection.delete_file(os.path.join(self.config['uri'].path, self.lock_file))
+        connection.delete_file(os.path.join(target_config['uri_parsed'].path, self.lock_file))
       except Exception as e:
         load.add(str(e), 'error')
         
       try:
         #create revision file
-        connection.upload_string(os.path.join(self.config['uri'].path, self.revison_file), git_revision_log)
+        connection.upload_string(os.path.join(target_config['uri_parsed'].path, self.revison_file), git_revision_log)
       except Exception as e:
         self.log.add(str(e), 'error')
         
@@ -200,7 +183,7 @@ class GitDeploy:
       self.log.add('Revisions match, no deploy needed.', 'ok')
       
   def check_premisson(self, filename):
-    for path, premisson in self.config['deploy']['file_rights']:
+    for path, premisson in self.config['file_rights'].iteritems():
       if filename.endswith(path) or path == '*' or '*' in path and filename.startswith(path.replace('*', '')):
         return int(premisson)
     return None

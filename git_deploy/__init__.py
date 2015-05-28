@@ -25,46 +25,21 @@ import fileinput
 import getpass
 import os
 import pwd
-import ConfigParser
+import config_reader
 
 def load_config():
-  config_file_path = '/etc/git-deploy/git-deploy.cfg'
-  if os.path.isfile(config_file_path):
-    config = ConfigParser.ConfigParser()
-    try:
-      config.read(config_file_path)
-      
-      ret = {'server': {}, 'hook': {}}
-      if config.has_option('server', 'port'):
-        ret['server']['port'] = config.getint('server', 'port')
-      else:
-        ret['server']['port'] = 7416
-        
-      if config.has_option('server', 'file_log'):
-        ret['server']['file_log'] = config.get('server', 'file_log')
-      else:
-        ret['server']['file_log'] = None
-        
-      if config.has_option('server', 'user'):
-        ret['server']['user'] = config.get('server', 'user')
-      else:
-        ret['server']['user'] = 'root'
-        
-      if config.has_option('hook', 'repository_path'):
-        ret['hook']['repository_path'] = config.get('hook', 'repository_path')
-      else:
-        ret['hook']['repository_path'] = '/home/git/repositories'
-        
-      if config.has_option('hook', 'tmp_path'):
-        ret['hook']['tmp_path'] = config.get('hook', 'tmp_path')
-      else:
-        ret['hook']['tmp_path'] = '/home/git/tmp'
-      
-      return ret
-    except IOError:
-      raise Exception('Failed to parse ' + config_file_path);
-  else:
-    raise Exception('Config file {} not found '.format(config_file_path))
+  config_file_path_search = ['/etc/git-deploy/config.py', '/etc/git-deploy/git-deploy.cfg']
+  for conf_file in config_file_path_search:
+      if os.path.isfile(conf_file):
+        config_file_path = conf_file
+        break
+    
+  config = config_reader.configReader(config_file_path)
+  if config_file_path.find('.py') == -1:
+    config.migrate_ini2py()
+    os.rename(config_file_path, config_file_path + '.old')
+
+  return config.get()
 
 
 def set_user(username):

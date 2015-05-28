@@ -7,11 +7,11 @@ __date__ ="$8.7.2014 20:26:41$"
 
 if 'initd' in open('.target').read():
   data_files_dist=[
-    ('/etc/init.d', ['etc/init.d/git-deploy']), ('/etc/git-deploy', ['etc/git-deploy/git-deploy.cfg'])
+    ('/etc/init.d', ['etc/init.d/git-deploy']), ('/etc/git-deploy', ['etc/git-deploy/config.py'])
   ] 
 else:
   data_files_dist=[
-    ('/usr/lib/systemd/system/', ['usr/lib/systemd/system/git-deploy.service']), ('/etc/git-deploy', ['etc/git-deploy/git-deploy.cfg'])
+    ('/usr/lib/systemd/system/', ['usr/lib/systemd/system/git-deploy.service']), ('/etc/git-deploy', ['etc/git-deploy/config.py'])
   ]
   
 setup(
