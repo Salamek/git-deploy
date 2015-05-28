@@ -22,7 +22,7 @@ setup(
   description="Git-deploy is tool written in python to allow fast and easy deployments on remote servers wia S/FTP, SSH/SCP",
   long_description=open('README.md').read(),
   license="GPL",
-  install_requires=['paramiko', 'twisted'],
+  install_requires=['paramiko', 'flask'],
   url="https://github.com/Salamek/git-deploy",
   packages=['git_deploy', 'git_deploy/classes'],
   package_dir={'git_deploy': 'git_deploy'},
