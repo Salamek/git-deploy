@@ -9,7 +9,7 @@ license=('GPL')
 url='https://github.com/Salamek/git-deploy'
 depends=('python2'
  'python2-paramiko'
- 'python2-twisted'
+ 'python2-flask'
  'git')
 backup=('etc/git-deploy/git-deploy.cfg')
 makedepends=()
