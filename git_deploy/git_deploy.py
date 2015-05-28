@@ -152,9 +152,9 @@ class GitDeploy:
       for upload in files['upload']:
         if upload.endswith(self.config_file) == False:
           try:
-            premisson = self.check_premisson(target_config, upload)
+            premisson = self.check_premisson(upload)
             connection.upload_file(os.path.join(self.root, upload), os.path.join(target_config['uri_parsed'].path, upload), premisson)
-            self.log.add('++ Deploying file ' + target_config['uri_parsed'].path + '/' + upload, 'ok')
+            self.log.add('++ Deploying file ' + os.path.join(target_config['uri_parsed'].path, upload), 'ok')
           except Exception as e:
             self.log.add(str(e), 'error')
 
@@ -162,7 +162,7 @@ class GitDeploy:
       for delete in files['delete']:
         try:
           connection.delete_file(os.path.join(target_config['uri_parsed'].path, delete))
-          self.log.add('++ Deleting file ' + target_config['uri_parsed'].path + '/' + delete, 'ok')
+          self.log.add('++ Deleting file ' + os.path.join(target_config['uri_parsed'].path, delete), 'ok')
         except Exception as e:
           self.log.add(str(e), 'error')
 
@@ -182,8 +182,8 @@ class GitDeploy:
     else:
       self.log.add('Revisions match, no deploy needed.', 'ok')
       
-  def check_premisson(self, target_config, filename):
-    for path, premisson in target_config['deploy']['file_rights']:
+  def check_premisson(self, filename):
+    for path, premisson in self.config['file_rights'].iteritems():
       if filename.endswith(path) or path == '*' or '*' in path and filename.startswith(path.replace('*', '')):
         return int(premisson)
     return None

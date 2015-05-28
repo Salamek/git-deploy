@@ -37,6 +37,7 @@ def load_config():
   config = config_reader.configReader(config_file_path)
   if config_file_path.find('.py') == -1:
     config.migrate_ini2py()
+    os.rename(config_file_path, config_file_path + '.old')
 
   return config.get()
 
