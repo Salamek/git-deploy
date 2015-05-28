@@ -31,7 +31,7 @@ Just simlink `/usr/bin/git-deploy` AS `post-receive` in hooks dir in repo you wa
 
 ### On push using GitHub or GitLab
 
-You must run git-deploy as daemon, first please edit file in `/etc/git-deploy/git-deploy.cfg` and make it suits your needs (config values should be Self-explanatory)
+You must run git-deploy as daemon, first please edit file in `/etc/git-deploy/config.py` (git-deploy.cfg is deprecated and will be migrated to new version) and make it suits your needs (config values should be Self-explanatory)
 
 Then just start `git-deploy` service and add it to your init if you want (for autostart on boot)
 
