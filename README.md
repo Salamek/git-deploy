@@ -55,28 +55,28 @@ It's same as GitHub ;-)
 In the root directory of your source code, create a <code>deploy.py</code> file (deploy.ini is deprecated and its support will be removed in next release).
 
 Here is a sample code for FTP acces (port can be omitted):
+```python
+CONFIG = {
+# Configure target or multiple targets
+  'targets': [
+    {
+      # Target uri, supported protocols are sftp, ftp, ftps format is standard URI
+      'uri': 'ftp://user:password@example.com/',
 
-    CONFIG = {
-    # Configure target or multiple targets
-      'targets': [
-        {
-          # Target uri, supported protocols are sftp, ftp, ftps format is standard URI
-          'uri': 'ftp://user:password@example.com/',
+      # Web hook to run remote hook after deploy is done, optional
+      'web_hook': 'http://example.com/your_hook',
 
-          # Web hook to run remote hook after deploy is done, optional
-          'web_hook': 'http://example.com/your_hook',
-
-          # Enables disables this target
-          'enabled': True
-        }
-      ],
-      # Set special file rights to deployed files, relative to GIT root
-      'file_rights': {
-        'dir/file/*': 777,
-        'dir/file': 775
-      }
+      # Enables disables this target
+      'enabled': True
     }
-
+  ],
+  # Set special file rights to deployed files, relative to GIT root
+  'file_rights': {
+    'dir/file/*': 777,
+    'dir/file': 775
+  }
+}
+```
 ## How It Works
 
 `git-deploy` stores file called `REVISION` on your server inside the root path to your application.
