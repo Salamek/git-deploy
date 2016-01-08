@@ -1,0 +1,2 @@
+include VERSION.txt README.md
+recursive-include etc *
