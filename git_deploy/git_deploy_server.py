@@ -25,14 +25,13 @@ from flask import Flask, request, jsonify, render_template
 class GitDeployServer:
   def __init__(self, port, tmp, file_log = None):
     app = Flask(__name__)
-    
-    app.run(debug = False, host='0.0.0.0', port=port)
+    #app.run(debug = False, host='0.0.0.0', port=port)
     if not app.debug and file_log != None:
         import logging
         from logging.handlers import RotatingFileHandler
         file_handler = RotatingFileHandler(file_log)
         file_handler.setLevel(logging.WARNING)
-        self.app.logger.addHandler(file_handler)
+        app.logger.addHandler(file_handler)
 
     @app.errorhandler(404)
     def not_found(error):
@@ -42,7 +41,7 @@ class GitDeployServer:
     def log():
       return jsonify({'message': 'Hi there! Here will be something cool in the feature!'}), 200
 
-    @app.route("/deploy.json", methods = ['POST'])
+    @app.route("/deploy.json", methods = ['POST', 'GET'])
     def deploy():
       if request.json == None:
         return jsonify({'message': 'I eat only JSON... bark, bark!'}), 400
@@ -52,5 +51,6 @@ class GitDeployServer:
         return jsonify({'message': 'ok'}), 200
       except Exception as e:
         return jsonify({'message': str(e)}), 500
-  
+
+    app.run(debug = False, host='0.0.0.0', port=port)  
   
