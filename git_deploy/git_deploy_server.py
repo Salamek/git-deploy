@@ -23,38 +23,34 @@ import git_deploy_remote
 from flask import Flask, request, jsonify, render_template
 
 class GitDeployServer:
-  app = Flask(__name__)
-  tmp = None
   def __init__(self, port, tmp, file_log = None):
-    self.tmp = tmp
+    app = Flask(__name__)
     
-    self.app.run(debug = False, host='0.0.0.0', port=port)
-    if not self.app.debug and file_log != None:
+    app.run(debug = False, host='0.0.0.0', port=port)
+    if not app.debug and file_log != None:
         import logging
         from logging.handlers import RotatingFileHandler
         file_handler = RotatingFileHandler(file_log)
         file_handler.setLevel(logging.WARNING)
         self.app.logger.addHandler(file_handler)
 
-  @app.errorhandler(404)
-  def not_found(error):
-    return jsonify( { 'message': str(error) } ), 404
-    
-    
-    
-  @app.route("/", methods = ['GET'])
-  def log():
-    return jsonify({'message': 'Hi there! Here will be something cool in the feature!'}), 200
+    @app.errorhandler(404)
+    def not_found(error):
+      return jsonify( { 'message': str(error) } ), 404
+     
+    @app.route("/", methods = ['GET'])
+    def log():
+      return jsonify({'message': 'Hi there! Here will be something cool in the feature!'}), 200
 
-  @app.route("/deploy.json", methods = ['POST'])
-  def deploy():
-    if request.json == None:
-      return jsonify({'message': 'I eat only JSON... bark, bark!'}), 400
+    @app.route("/deploy.json", methods = ['POST'])
+    def deploy():
+      if request.json == None:
+        return jsonify({'message': 'I eat only JSON... bark, bark!'}), 400
   
-    try:
-      git_deploy_remote.GitDeployRemote(request.json['after'], request.json['ref'], request.json['repository']['url'], self.tmp)
-      return jsonify({'message': 'ok'}), 200
-    except Exception as e:
-      return jsonify({'message': str(e)}), 500
+      try:
+        git_deploy_remote.GitDeployRemote(request.json['after'], request.json['ref'], request.json['repository']['url'], tmp)
+        return jsonify({'message': 'ok'}), 200
+      except Exception as e:
+        return jsonify({'message': str(e)}), 500
   
   

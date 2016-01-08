@@ -1,7 +1,7 @@
 # Maintainer: Adam Schubert <adam.schubert@sg1-game.net>
 
 pkgname=git-deploy
-pkgver=2.2.2
+pkgver=2.2.3
 pkgrel=1
 pkgdesc="Git-deploy is tool written in python to allow fast and easy deployments on remote servers wia S/FTP, SSH/SCP"
 arch=('any')
