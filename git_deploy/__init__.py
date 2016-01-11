@@ -29,11 +29,15 @@ import config_reader
 
 def load_config():
   config_file_path_search = ['/etc/git-deploy/config.py', '/etc/git-deploy/git-deploy.cfg']
+  config_file_path = None
   for conf_file in config_file_path_search:
       if os.path.isfile(conf_file):
         config_file_path = conf_file
         break
-    
+        
+  if config_file_path is None:
+    raise Exception('Git deploy config file not found in [{}]'.format(' or '.join(config_file_path_search)))
+
   config = config_reader.configReader(config_file_path)
   if config_file_path.find('.py') == -1:
     config.migrate_ini2py()
@@ -70,9 +74,9 @@ def main():
     stdin = fileinput.input()[0].strip().split(' ')
     #stdin 3 items thats post-receive
     if len(stdin) == 3:
-      
+
       set_user(config['server']['user'])
-      
+
       prev, current, branch = stdin
       git_user = getpass.getuser()
       repository_path = os.path.join(config['hook']['repository_path'])
@@ -80,5 +84,3 @@ def main():
       #Build needed info
       ssh_path = git_user + '@' + socket.gethostname() + ':' + os.getcwd().replace(repository_path,'')
       git_deploy_remote.GitDeployRemote(current, branch, ssh_path, config['hook']['tmp_path'])
-  
-  
