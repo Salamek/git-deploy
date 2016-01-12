@@ -1,0 +1,58 @@
+{% set layout = 'small' %}
+{% extends "layout.html" %}
+{% block body %}
+  {% from 'macros.html' import render_commit, render_deploy_status_icon %}
+
+  {% if namespace.user %}
+  <div class="owner-header row">
+    <div class="col-lg-2 owner-avatar">
+      <img alt="{{namespace.user.first_name}} {{namespace.user.last_name}}" width="125" height="125" src="{{namespace.user.email|gravatar(125)}}">
+    </div>
+    <div class="col-lg-10 owner-info">
+      <h1 class="owner-title">{{namespace.user.first_name}} {{namespace.user.last_name}}</h1>
+      <p class="owner-handle"></p>
+    </div>
+  </div>
+  {% endif %}
+
+  {% for repository in namespace.repository %}
+    {% if repository.branch %}
+      {% set branch = repository.branch[0] %}
+      {% if branch and branch.commit %}
+        {% set commit = branch.commit[0] %}
+      {% else %}
+        {% set commit = {'status': 'UNKNOWN', 'sha': 'unknow', 'created': repository.created} %}
+      {% endif %}
+    {% else %}
+      {% set branch = {'name': 'unknow'} %}
+      {% set commit = {'status': 'UNKNOWN', 'sha': 'unknow', 'created': repository.created} %}
+    {% endif %}
+
+    <div class="row repository-row {{commit.status|lower}}">
+      <div class="col-lg-3 row-item">
+          <h2 class="repo-title">
+            {{render_deploy_status_icon(commit.status)}}
+            <a href="{{url_for('index', server=repository.namespace.server.name, namespace=repository.namespace.name, repository=repository.name)}}" class="colored-status">
+              <span class="label-align">{{repository.name}}</span>
+            </a>
+          </h2>
+      </div>
+      <div class="col-lg-3 row-item">
+        <a href="{{url_for('index', server=repository.namespace.server.name, namespace=repository.namespace.name, repository=repository.name, commit=commit.sha)}}" class="colored-status">
+            <span class="fa fa-hashtag"></span>
+            <span>{{commit.sha|cut_sha}}</span>
+        </a>
+      </div>
+      <div class="col-lg-3 row-item">
+          <span class="fa fa-code-fork"></span>
+          <span>{{branch.name}}</span>
+      </div>
+
+      <div class="col-lg-3 row-item">
+        <span class="fa fa-calendar"></span>
+        <span class="colored-status">{{commit.status|format_status}}</span>
+        <span>{{commit.created|format_since}}</span>
+      </div>
+    </div>
+  {% endfor %}
+{% endblock %}

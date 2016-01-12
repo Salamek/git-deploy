@@ -1,0 +1,60 @@
+{% macro render_deploy_status_icon(status) %}
+  {% if status == 'ERROR' %}
+    <span aria-label="Deploy failed" title="Deploy failed" class="fa fa-times colored-status"></span>
+  {% elif status == 'WARNING' %}
+    <span aria-label="Deploy had some errors" title="Deploy had some errors" class="fa fa-exclamation colored-status"></span>
+  {% elif status == 'OK' %}
+    <span aria-label="Deploy successful" title="Deploy successful" class="fa fa-check colored-status"></span>
+  {% elif status == 'RUNNING' %}
+    <span aria-label="Deploy is runngin" title="Deploy is running" class="fa fa-circle-o-notch fa-spin colored-status"></span>
+  {% else %}
+    <span aria-label="Deploy status unknown" title="Deploy status unknown" class="fa fa-question colored-status"></span>
+  {% endif %}
+{% endmacro %}
+
+{% macro render_commit(commit) %}
+  <div class="row deploy {{commit.status|lower}}">
+    <div class="col-lg-6 deploy-commit">
+      <h2 class="deploy-title">
+        {{render_deploy_status_icon(commit.status)}}
+        <span class="fa fa-code-fork"></span>
+        <small class="commit-branch colored-status" title="master">{{commit.branch.name}}</small>
+        <span class="colored-status">{{commit.name}}</span>
+      </h2>
+      <div class="commit-info">
+        <p class="commit-description">
+        </p>
+        <ul class="list-icon">
+          <li>
+            <a class="commit-commit" title="See the commit on GitHub" href="#">
+              <span class="fa fa-git"></span>
+              <span class="label-align">Commit {{commit.sha|cut_sha}}</span>
+            </a>
+          </li>
+        </ul>
+        <p class="commit-author">
+          <img alt="{{commit.user.first_name}} {{commit.user.last_name}}" src="{{commit.user.email|gravatar}}"><span class="label-align">{{commit.user.first_name}} {{commit.user.last_name}} authored and committed</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="col-lg-6 deploy-info">
+      <h3 class="deploy-status">
+        <a href="{{url_for('index', server=commit.branch.repository.namespace.server.name, namespace=commit.branch.repository.namespace.name, repository=commit.branch.repository.name, commit=commit.sha)}}" class="colored-status">
+          <span class="fa fa-hashtag"></span>
+          {{commit.sha|cut_sha}} {{commit.status|format_status}}
+        </a>
+      </h3>
+      <ul>
+        <li title="{{commit.created}}">
+          <span class="fa fa-clock-o"></span>
+          <span>Total time for {{commit.runtime|format_seconds}}</span>
+        </li>
+        <li title="{{commit.created|datetime_add(commit.runtime)}}">
+          <span class="fa fa-calendar"></span>
+          <span>{{commit.created|datetime_add(commit.runtime)|format_since}}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+{% endmacro %}

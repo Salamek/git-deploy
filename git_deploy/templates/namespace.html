@@ -1,0 +1,24 @@
+{% set layout = 'small' %}
+{% extends "layout.html" %}
+{% block body %}
+  {% from 'macros.html' import render_commit, render_deploy_status_icon %}
+
+  {% for namespace in server.namespace %}
+    <div class="row namespace-row ok">
+      <div class="col-lg-3 row-item">
+          <h2 class="repo-title">
+            <a href="{{url_for('project_list', server=namespace.server.name, namespace=namespace.name)}}" class="colored-status">
+              <span class="fa fa-map-signs"></span>
+              <span class="label-align">{{namespace.name}}</span>
+            </a>
+          </h2>
+      </div>
+      {% if namespace.user %}
+      <div class="col-lg-9 row-item text-right">
+          <img alt="{{namespace.user.first_name}} {{namespace.user.last_name}}" src="{{namespace.user.email|gravatar}}">
+          <span>{{namespace.user.first_name}} {{namespace.user.last_name}}</span>
+      </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% endblock %}

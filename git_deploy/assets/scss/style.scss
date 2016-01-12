@@ -1,0 +1,237 @@
+
+@import "mixings";
+
+.container
+{
+  width: 98%;
+
+  &.small
+  {
+    max-width: 1024px;
+  }
+}
+
+.repository-list
+{
+  background-color: #FAF9F7;
+  .repository
+  {
+    height: auto;
+    padding: .8em .5em .8em 1.5em;
+    margin-bottom: .46rem;
+    background-color: #fff;
+    border-radius: 0;
+
+    .repository-title
+    {
+      width: 75%;
+      white-space: nowrap;
+      overflow: hidden;
+      position: relative;
+      display: inline-block;
+      margin-bottom: .7em;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 400;
+    }
+
+    @include deploy-status-all(8px);
+  }
+}
+
+
+.deploy-header
+{
+  margin-bottom: 20px;
+  .deploy-title
+  {
+    display:block;
+    float: left;
+    margin: 0 10px;
+  }
+
+  .deploy-badge
+  {
+    float: left;
+    line-height: 36px;
+    img
+    {
+      display: inline-block;
+      vertical-align: middle;
+    }
+  }
+}
+
+.deploy
+{
+  font-size: 16px;
+  border: 1px solid #EFF0EC;
+  clear: both;
+  margin-bottom: 20px;
+
+  @include deploy-status-all(12px);
+
+  ul
+  {
+    padding-left: 1rem;
+    li
+    {
+      list-style: none;
+    }
+  }
+
+
+  .deploy-commit
+  {
+    padding-left: 2.5rem;
+
+    .deploy-title
+    {
+      margin: 1rem 0;
+      padding-left: 1rem;
+      font-weight: 400;
+      font-size: 16px;
+
+      .commit-branch
+      {
+        margin-right: .5em;
+        font-weight: 600;
+        font-size: 16px;
+      }
+    }
+
+    .commit-info
+    {
+      font-size: 15px;
+      padding-left: 1rem;
+
+      .commit-author
+      {
+         img
+         {
+           width: 20px;
+           height: 20px;
+           margin-right: .5em;
+           border-radius: 50%;
+         }
+      }
+    }
+  }
+
+  .deploy-info
+  {
+    .deploy-status
+    {
+      margin: 1rem 0;
+      padding-left: 1rem;
+      font-weight: 400;
+      font-size: 16px;
+    }
+  }
+}
+
+.log-holder
+{
+  overflow-y: scroll;
+  height: 100%;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  background-color: #2a2a2a;
+  color: #f1f1f1;
+
+  .log-line
+  {
+    color: #f1f1f1;
+    min-height: 16px;
+    padding: 0 15px 0 55px;
+
+    &.warning
+    {
+      color: orange;
+      font-weight: bold;
+    }
+
+    &.error
+    {
+      background-color: red;
+      font-weight: bold;
+    }
+
+    &:hover
+    {
+      background-color: #444;
+    }
+
+    .log-line-number
+    {
+      color: #666;
+      display: inline-block;
+      text-align: right;
+      min-width: 40px;
+      margin-left: -40px;
+      cursor: pointer;
+      padding-right: 1em;
+      text-decoration: none;
+
+      &:hover
+      {
+        text-decoration: none;
+      }
+    }
+  }
+}
+
+.owner-header
+{
+  padding: 0 .9375rem;
+  margin-bottom: 3rem;
+  color: #969496;
+
+  img
+  {
+    border-radius: 50%;
+    background-color: #F4F3ED;
+  }
+}
+
+.repository-row, .namespace-row
+{
+  border: 1px solid #EFF0EC;
+  font-size: 16px;
+  margin-bottom: .3rem;
+  color: gray;
+  background: -webkit-linear-gradient(left, #CACECE 0, #CACECE 9px, #fff 10px, #fff 100%) no-repeat;
+  background: linear-gradient(to right,#CACECE 0,#CACECE 9px,#fff 10px,#fff 100%) no-repeat;
+  padding-top: 10px;
+  padding-bottom: 10px;
+
+  @include deploy-status-all(9px);
+  .row-item
+  {
+    font-size: 16px;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+
+    h2
+    {
+      margin: 0;
+      font-weight: 400;
+      font-size: 16px;
+    }
+
+    img
+    {
+      border-radius: 50%;
+      background-color: #F4F3ED;
+    }
+  }
+}
+
+.namespace-row
+{
+  h2
+  {
+    line-height: 40px;
+  }
+}

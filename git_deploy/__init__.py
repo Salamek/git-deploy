@@ -34,7 +34,7 @@ def load_config():
       if os.path.isfile(conf_file):
         config_file_path = conf_file
         break
-        
+
   if config_file_path is None:
     raise Exception('Git deploy config file not found in [{}]'.format(' or '.join(config_file_path_search)))
 
@@ -48,7 +48,10 @@ def load_config():
 
 def set_user(username):
   #set user to run under
-  id = pwd.getpwnam(username)
+  try:
+    id = pwd.getpwnam(username)
+  except KeyError:
+    raise Exception('User "{}" not found'.format(username))
 
   os.environ['HOME']  = id.pw_dir
   os.environ['LOGNAME']  = id.pw_name
@@ -63,7 +66,7 @@ def main():
   if len(sys.argv) == 2 and sys.argv[1] == 'server':
     set_user(config['server']['user'])
 
-    git_deploy_server.GitDeployServer(config['server']['port'], config['hook']['tmp_path'], config['server']['file_log'])
+    git_deploy_server.GitDeployServer(config)
   elif len(sys.argv) == 1:
     #one arg means local run
     git_deploy.GitDeploy().get_log().output()
@@ -83,4 +86,4 @@ def main():
 
       #Build needed info
       ssh_path = git_user + '@' + socket.gethostname() + ':' + os.getcwd().replace(repository_path,'')
-      git_deploy_remote.GitDeployRemote(current, branch, ssh_path, config['hook']['tmp_path'])
+      git_deploy_remote.GitDeployRemote(current, branch, ssh_path, config)

@@ -1,0 +1,26 @@
+@mixin deploy-status($type, $color, $border)
+{
+  &.$type
+  {
+    background: -webkit-linear-gradient(left, $color 0, $color $border, #fff $border, #fff 100%) no-repeat;
+    background: linear-gradient(to right,$color 0,$color $border,#fff $border,#fff 100%) no-repeat;
+
+    .colored-status
+    {
+      color: $color;
+      a
+      {
+        color: $color;
+      }
+    }
+  }
+}
+
+@mixin deploy-status-all($border)
+{
+  @include deploy-status(error, #d94341, $border);
+  @include deploy-status(ok, #44a662, $border);
+  @include deploy-status(warning, #cc9511, $border);
+  @include deploy-status(running, #e5da3f, $border);
+  @include deploy-status(unknown, #901d1d, $border);
+}

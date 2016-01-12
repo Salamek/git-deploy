@@ -27,7 +27,7 @@ class DeployWorker(threading.Thread):
   def __init__(self, caller):
     super(DeployWorker, self).__init__()
     self.caller = caller
-    
+
   work_list = []
   def run(self):
     while(len(self.work_list) > 0):
@@ -37,18 +37,18 @@ class DeployWorker(threading.Thread):
         self.caller.loger(self.deploy(tmp))
       except Exception as e:
         self.caller.fail(str(e))
-        
-  
+
+
   def add_work(self, work):
     self.work_list.append(work)
-    
+
   """
    * Method sync local TMP with main repo
   """
   def sync(self, tmp, branch, ssh_path):
     git = Git(tmp)
     git.update(branch, ssh_path)
-    
+
   """
    * Method calls local deployer
    * @throws Exception
@@ -60,21 +60,22 @@ class DeployWorker(threading.Thread):
 
 
 class GitDeployRemote:
-  
+
   workers = {}
-  
+
   """
    * Constructor
    * @param string $stdin STDIN
   """
-  def __init__(self, current, branch, ssh_path, tmp_path):
+  def __init__(self, current, branch, ssh_path, config):
     branch = branch.split('/')[-1]
+    tmp_path = config['hook']['tmp_path']
 
     #Separate tmp repos per branch
     parsed_path = Git.git_url_parse(ssh_path)
     tmp = os.path.join(tmp_path, parsed_path['hostname'], parsed_path['path'], branch)
-    
-    
+
+
     #tmp is uniqe identifier of repo, this creates front for each repo
     if tmp in self.workers:
       w = self.workers[tmp]
@@ -88,7 +89,7 @@ class GitDeployRemote:
       self.workers[tmp] = DeployWorker(self)
       self.workers[tmp].add_work([current, branch, ssh_path, tmp])
       self.workers[tmp].start()
-      
+
     #clean not running workers
     for tmp in self.workers.keys():
       if self.workers[tmp].isAlive() == False:
