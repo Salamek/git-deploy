@@ -2,6 +2,9 @@ CONFIG = {
   # Configure target or multiple targets
   'targets': [
     {
+      # Name of target
+      'name': 'Testing Target',
+
       # Target uri
       'uri': 'sftp://user:password@example.com/path/to/deploy',
 
