@@ -43,7 +43,7 @@ class Ssh:
     try:
       self.connection = self.ssh.open_sftp() 
     except Exception as err:
-      raise Exception( "Failed to start SFTP session from connection to {}. Check that SFTP service is running and available. Reason: {}".format( hostname, str(err) ))
+      raise Exception( "Failed to start SFTP session from connection to {}. Check that SFTP service is running and available. Reason: {}".format( host, str(err) ))
     
   """
    * Method reads file from remote server
