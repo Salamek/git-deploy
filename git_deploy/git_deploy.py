@@ -55,7 +55,7 @@ class GitDeploy:
       root = None
 
     try:
-      self.git = Git(root);
+      self.git = Git(root)
       self.root = self.git.root
       try:
         self.parse_config()
@@ -118,20 +118,20 @@ class GitDeploy:
       connection = Ftps(target_config['uri_parsed'].hostname, target_config['uri_parsed'].username, target_config['uri_parsed'].path, port, password)
 
 
-    git_revision = None;
-    git_revision_log = None;
+    git_revision = None
+    git_revision_log = None
     try:
       if self.current_revision:
         git_revision = git_revision_log = self.current_revision
       else:
         git_revision = git_revision_log = self.git.get_revision()
     except Exception as e:
-      git_revision = None;
+      git_revision = None
 
     try:
       revision = connection.read_file(os.path.join(target_config['uri_parsed'].path, self.revison_file).strip())
     except Exception as e:
-      revision = None;
+      revision = None
 
     #Revision not match, we must get changes and upload it on server
     if git_revision != revision:
@@ -147,7 +147,7 @@ class GitDeploy:
       else:
         self.log.add('No remote revision found, deploying whole project {}'.format(git_revision_log), 'ok')
 
-      files = self.git.diff_commited(revision);
+      files = self.git.diff_commited(revision)
 
       
       for upload in files['upload']:
@@ -171,7 +171,7 @@ class GitDeploy:
         #destroy lock file
         connection.delete_file(os.path.join(target_config['uri_parsed'].path, self.lock_file))
       except Exception as e:
-        load.add(str(e), 'error')
+        self.log.add(str(e), 'error')
         
       try:
         #create revision file
