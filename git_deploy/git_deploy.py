@@ -179,7 +179,7 @@ class GitDeploy:
       except Exception as e:
         self.log.add(str(e), 'error')
         
-      if target_config['web_hook']:
+      if 'web_hook' in target_config and target_config['web_hook']:
         import urllib2
         try:
           data = json.dumps({'errors': len(self.log.get('error')), 'warnings': len(self.log.get('warning'))})
