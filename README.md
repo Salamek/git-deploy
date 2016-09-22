@@ -1,5 +1,7 @@
 # git-deploy
 
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=D8LQ4XTBLV3C4&lc=CZ&item_number=Salamekgit-deploy&currency_code=EUR)
+
 ## Description
 
 git-deploy is a deployment tool to allow for quick and easy deployments based on
