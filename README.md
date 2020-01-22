@@ -16,8 +16,8 @@ git-deploy supports deployment over SSH and FTP/S
 Add new repository and install by running this commands: 
 
 ```bash
-wget -O - http://apt.salamek.cz/apt/conf/salamek.gpg.key|sudo apt-key add -
-echo "deb     http://apt.salamek.cz/apt all main" | sudo tee /etc/apt/sources.list.d/salamek.cz.list
+wget -O - https://repository.salamek.cz/deb/salamek.gpg.key|sudo apt-key add -
+echo "deb     https://repository.salamek.cz/deb/pub all main" | sudo tee /etc/apt/sources.list.d/salamek.cz.list
 sudo apt-get update && sudo apt-get install git-deploy
 ```
 
